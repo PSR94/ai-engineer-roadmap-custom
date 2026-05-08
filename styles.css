@@ -21,7 +21,8 @@
   --grain-opacity: 0.025;
   --radius: 16px;
   --radius-lg: 22px;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -1862,37 +1863,40 @@ textarea {
 }
 
 .hero__title,
-.hero__title em,
-.hero__title-100x,
 .hero__stat-num,
 .agenda__title,
-.agenda__title em,
-.agenda__sub,
 .agenda__tile-num,
-.agenda__tile.is-capstone .agenda__tile-domain,
 .phase__num,
 .phase__title,
 .phase__weeks,
-.phase__weeks-detail,
-.phase__diff-note,
 .tabbox__panel-title,
 .module-detail__section-title,
 .concept-card__title,
-.phase__endstate-text,
 .capstones__title,
-.capstones__title em,
 .capstone__title,
-.capstone__proves,
-.footer__title,
-.footer__title em,
 .outscope__title,
-.outscope__title em,
 .outscope__card-title,
 .next__title,
-.next__title em,
 .next__card-title {
   font-family: var(--font-sans);
   letter-spacing: 0;
+}
+
+.hero__title em,
+.hero__title-100x,
+.agenda__title em,
+.agenda__sub,
+.agenda__tile.is-capstone .agenda__tile-domain,
+.phase__weeks-detail,
+.phase__diff-note,
+.phase__endstate-text,
+.capstones__title em,
+.capstone__proves,
+.footer__title,
+.footer__title em,
+.outscope__title em,
+.next__title em {
+  font-family: var(--font-serif);
 }
 
 .hero,

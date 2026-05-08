@@ -110,17 +110,6 @@ function ModuleDetail({ section }) {
         </div>
       </DetailSection>
 
-      {detail.miniProject ? (
-        <DetailSection eyebrow="Mini Practice Task" title={detail.miniProject.title}>
-          <p className="module-detail__intro">{detail.miniProject.description}</p>
-          <div className="module-detail__code-grid">
-            <CodeBlock label="Input" code={detail.miniProject.inputCode} />
-            <CodeBlock label="Expected output shape" code={detail.miniProject.expectedOutputCode} />
-          </div>
-          <CodeBlock label="Starter code" code={detail.miniProject.starterCode} />
-        </DetailSection>
-      ) : null}
-
       <DetailSection title="Common Mistakes">
         <div className="mistake-table" role="table" aria-label="Common mistakes and better approaches">
           <div className="mistake-table__row mistake-table__head" role="row">

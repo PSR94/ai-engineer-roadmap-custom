@@ -471,57 +471,6 @@ function App() {
         </div>
       </section>
 
-      {/* INSTRUCTOR */}
-      <section className="instructor reveal" data-screen-label="03 Instructor">
-        <div className="instructor__card">
-          <div className="instructor__photo">
-            <img src="uploads/balaji-chippada.png" alt="Balaji Chippada" />
-          </div>
-          <div className="instructor__body">
-            <div className="instructor__label">Your Instructor</div>
-            <h3 className="instructor__name">Balaji Chippada</h3>
-            <div className="instructor__role">AI/ML practitioner · Production-scale agentic AI builder</div>
-            <p className="instructor__bio">
-              I have spent <span>8 years in the AI/ML industry</span> and watched the field move from traditional
-              machine learning into agentic AI. Along the way, I have built <span>production-scale agentic
-              applications</span> and seen what actually matters when these systems leave the demo stage.
-              I am also a tutor in the AI and data science space, and over the last couple of years
-              I have mentored and taught <span>3,000+ students and working professionals</span> transform their careers.
-              If I had to start all over again in 2026, this is exactly how I would begin. This roadmap
-              is the curriculum I wish someone had handed me on day one.
-            </p>
-            <div className="instructor__chips">
-              <span className="instructor__chip">8 Years AI/ML</span>
-              <span className="instructor__chip">LangGraph</span>
-              <span className="instructor__chip">Agentic AI</span>
-              <span className="instructor__chip">Production RAG</span>
-              <span className="instructor__chip">Multi-Agent Systems</span>
-              <span className="instructor__chip">LLMOps</span>
-            </div>
-          </div>
-          <div className="instructor__cta">
-            <div className="instructor__connect-label">Connect with me</div>
-            <div className="instructor__socials">
-              <a className="instructor__social" href="https://www.linkedin.com/in/balaji-chippada-0317/" target="_blank" rel="noopener noreferrer" aria-label="Connect with Balaji Chippada on LinkedIn">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6.7 9.2H3.2v11.3h3.5V9.2ZM4.9 3.5C3.8 3.5 3 4.3 3 5.4s.8 1.9 1.9 1.9 1.9-.8 1.9-1.9-.8-1.9-1.9-1.9Zm15.6 10.6c0-3.3-1.8-5.2-4.4-5.2-1.8 0-2.8 1-3.2 1.7V9.2H9.5v11.3H13v-6.1c0-1.6.8-2.5 2-2.5s1.9.8 1.9 2.5v6.1h3.6v-6.4Z" />
-                </svg>
-              </a>
-              <a className="instructor__social" href="https://www.youtube.com/@balajichippada" target="_blank" rel="noopener noreferrer" aria-label="Open Balaji Chippada on YouTube">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.6 12 4.6 12 4.6s-5.7 0-7.5.5a3 3 0 0 0-2.1 2.1C2 9 2 12 2 12s0 3 .4 4.8a3 3 0 0 0 2.1 2.1c1.8.5 7.5.5 7.5.5s5.7 0 7.5-.5a3 3 0 0 0 2.1-2.1C22 15 22 12 22 12s0-3-.4-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
-                </svg>
-              </a>
-              <a className="instructor__social" href="https://www.instagram.com/inside.datascience/" target="_blank" rel="noopener noreferrer" aria-label="Open Inside Data Science on Instagram">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M7.5 2.8h9A4.7 4.7 0 0 1 21.2 7.5v9a4.7 4.7 0 0 1-4.7 4.7h-9a4.7 4.7 0 0 1-4.7-4.7v-9a4.7 4.7 0 0 1 4.7-4.7Zm0 2A2.7 2.7 0 0 0 4.8 7.5v9a2.7 2.7 0 0 0 2.7 2.7h9a2.7 2.7 0 0 0 2.7-2.7v-9a2.7 2.7 0 0 0-2.7-2.7h-9Zm4.5 3.1a4.1 4.1 0 1 1 0 8.2 4.1 4.1 0 0 1 0-8.2Zm0 2a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Zm4.4-2.4a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* DOCK */}
       <div className={`dock ${dockVisible ? 'visible' : ''}`}>
         {window.ROADMAP.map((p, i) => (

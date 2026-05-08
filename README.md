@@ -12,8 +12,6 @@ https://psr94.github.io/ai-engineer-roadmap-custom/
 
 ## About
 
-This roadmap is created by Balaji Chippada, an AI/ML practitioner and tutor who has worked across traditional machine learning, production-scale agentic AI systems, and AI/data science education.
-
 The curriculum is designed around one idea:
 
 > If I had to start all over again in 2026, this is how I would begin.

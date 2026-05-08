@@ -21,6 +21,7 @@ window.ROADMAP = [
           level: "Beginner",
           status: "Required",
           goal: "By the end of this module, you should understand the Python basics needed to read, write, and debug simple AI engineering code.",
+          conceptsTitle: "Core Python Concepts",
           whyItMatters: [
             "Calling LLM APIs",
             "Cleaning prompts and user input",
@@ -162,16 +163,506 @@ def parse_score(raw_score: float | None) -> float:
           ]
         }
       },
-      { n: "1.2", title: "Object-Oriented Python", items: ["Classes, __init__, instance vs class methods", "Inheritance, encapsulation, polymorphism", "Dataclasses", "Pydantic models — every agent framework uses them for tool schemas"] },
-      { n: "1.3", title: "Data Structures", items: ["List, Tuple, Set, Dict, NamedTuple", "collections.defaultdict, Counter, deque", "When to use which (interview territory)"] },
-      { n: "1.4", title: "Error & File Handling", items: ["try/except/finally", "Custom exception classes", "Context managers (with, contextlib)", "Reading/writing JSON, CSV, plain text, binary"] },
-      { n: "1.5", title: "Working with HTTP APIs", items: ["The requests library", "HTTP verbs, headers, status codes", "Authentication (Bearer tokens, API keys)", "Rate limits, retries, exponential backoff with tenacity"] },
-      { n: "1.6", title: "Database Connectivity", items: ["psycopg2 for raw PostgreSQL", "SQLAlchemy ORM basics", "Connection pooling and why it matters under load", "Raw SQL when the ORM gets in the way"] },
-      { n: "1.7", title: "FastAPI", items: ["First /chat endpoint", "Pydantic request/response models", "Dependency injection", "Automatic OpenAPI docs", "Running with uvicorn"] },
-      { n: "1.8", title: "Async Programming", items: ["asyncio fundamentals — event loop, coroutines", "async/await syntax", "asyncio.gather for parallel LLM calls", "asyncio.wait_for for timeout protection", "asyncio.create_task for fire-and-forget logging"] },
-      { n: "1.9", title: "Git + GitHub Workflows", items: ["Git basics: clone, branch, commit, merge, rebase", "Pull requests, code review, issues, and project boards", "Resolving merge conflicts without panic", "README-driven portfolio repos — architecture, setup, screenshots, eval numbers"] },
-      { n: "1.10", title: "Linux + Shell Basics", items: ["Navigation, permissions, processes, environment variables", "grep/rg, find, awk/sed basics for logs and data files", "SSH into a server, tail logs, inspect disk/memory/ports", "Shell scripts for repeatable local workflows"] },
-      { n: "1.11", title: "Testing Fundamentals", items: ["pytest unit tests for pure Python functions", "FastAPI integration tests with test clients", "Mocking LLM/API calls without hiding failures", "Golden-file and regression tests for prompts, retrieval, and eval outputs"] }
+      {
+        n: "1.2",
+        title: "Object-Oriented Python",
+        items: ["Classes, __init__, instance vs class methods", "Inheritance, encapsulation, polymorphism", "Dataclasses", "Pydantic models — every agent framework uses them for tool schemas"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand enough object-oriented Python to read framework code, organize small AI apps, and use Pydantic-style models confidently.",
+          conceptsTitle: "OOP Concepts",
+          whyItMatters: ["Agent state objects", "Tool and service classes", "Pydantic schemas", "Reusable API clients", "Cleaner project structure"],
+          concepts: [
+            {
+              title: "Classes and __init__",
+              explanation: "A class is a blueprint for creating objects. __init__ sets up the object when it is created.",
+              aiUseCase: "Wrap model settings or an API client in one object instead of passing the same values everywhere.",
+              plainExample: "Create one LLMClient that remembers the model name and timeout, then reuse it across your app.",
+              code: `class LLMClient:
+    def __init__(self, model: str):
+        self.model = model
+
+client = LLMClient(model="gpt-4.1-mini")`
+            },
+            {
+              title: "Instance vs class methods",
+              explanation: "Instance methods use data from one object. Class methods belong to the class and often create objects in a standard way.",
+              aiUseCase: "Create a config object from environment settings or defaults.",
+              plainExample: "A config class can create a safe default local setup without copying the same settings.",
+              code: `class AppConfig:
+    def __init__(self, model: str):
+        self.model = model
+
+    @classmethod
+    def local(cls):
+        return cls(model="gpt-4.1-mini")`
+            },
+            {
+              title: "Dataclasses and Pydantic-style models",
+              explanation: "Dataclasses reduce boilerplate for simple data containers. Pydantic adds validation and is common in FastAPI and tool schemas.",
+              aiUseCase: "Represent a retrieved document chunk or tool input with clear fields.",
+              plainExample: "A chunk should always have text and a score. A model makes that shape obvious.",
+              code: `from dataclasses import dataclass
+
+@dataclass
+class Chunk:
+    text: str
+    score: float`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Creating classes for everything", better: "Use classes only when state or structure helps" },
+            { mistake: "Putting all logic in one class", better: "Keep methods small and focused" },
+            { mistake: "Ignoring simple data models", better: "Use dataclasses or Pydantic-style schemas for structured data" }
+          ],
+          checklist: ["Create a simple class", "Explain __init__", "Use a dataclass for structured data", "Recognize Pydantic-style schemas"]
+        }
+      },
+      {
+        n: "1.3",
+        title: "Data Structures",
+        items: ["List, Tuple, Set, Dict, NamedTuple", "collections.defaultdict, Counter, deque", "When to use which (interview territory)"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Choose the right Python data structure for prompts, documents, metadata, queues, and API responses.",
+          conceptsTitle: "Data Structure Concepts",
+          whyItMatters: ["Store messages", "Track document metadata", "Count errors", "Remove duplicates", "Build retrieval context"],
+          concepts: [
+            {
+              title: "Lists, tuples, sets, and dicts",
+              explanation: "Lists keep ordered items, tuples are fixed lightweight groups, sets remove duplicates, and dicts map keys to values.",
+              aiUseCase: "Store chat messages in a list, metadata in a dict, and unique source IDs in a set.",
+              plainExample: "If a RAG answer cites the same document twice, a set can keep only one source ID.",
+              code: `messages = ["hello", "what is rag?"]
+metadata = {"source": "handbook.pdf", "page": 4}
+source_ids = {"doc-1", "doc-1", "doc-2"}`
+            },
+            {
+              title: "Counter and defaultdict",
+              explanation: "Counter counts repeated values. defaultdict gives missing keys a default value automatically.",
+              aiUseCase: "Count tool failures or group chunks by source document.",
+              plainExample: "If one tool fails ten times today, Counter makes that obvious quickly.",
+              code: `from collections import Counter, defaultdict
+
+errors = Counter(["timeout", "timeout", "rate_limit"])
+chunks_by_doc = defaultdict(list)`
+            },
+            {
+              title: "deque for queues",
+              explanation: "deque is useful when you add and remove items from both ends efficiently.",
+              aiUseCase: "Process document chunks or retry jobs in order.",
+              plainExample: "A small ingestion worker can pop the next document from a queue and process it.",
+              code: `from collections import deque
+
+jobs = deque(["doc1.pdf", "doc2.pdf"])
+next_job = jobs.popleft()`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using lists for everything", better: "Use dicts for lookup, sets for uniqueness, queues for ordered work" },
+            { mistake: "Mutating shared data accidentally", better: "Copy data when passing it between steps if needed" },
+            { mistake: "Choosing clever structures too early", better: "Start simple and change when the data access pattern is clear" }
+          ],
+          checklist: ["Pick list vs dict vs set", "Use Counter for counts", "Use defaultdict for grouping", "Understand deque basics"]
+        }
+      },
+      {
+        n: "1.4",
+        title: "Error & File Handling",
+        items: ["try/except/finally", "Custom exception classes", "Context managers (with, contextlib)", "Reading/writing JSON, CSV, plain text, binary"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Handle bad inputs, failed files, and recoverable errors without crashing the whole AI workflow.",
+          conceptsTitle: "Error And File Concepts",
+          whyItMatters: ["Read prompts and datasets", "Load document files", "Save eval results", "Recover from bad input", "Debug production failures"],
+          concepts: [
+            {
+              title: "try / except / finally",
+              explanation: "try runs risky code, except handles failure, and finally runs cleanup.",
+              aiUseCase: "If a document parser fails, mark the file as failed instead of stopping the whole ingestion job.",
+              plainExample: "One broken PDF should not block 500 other documents from being processed.",
+              code: `try:
+    text = parse_pdf("contract.pdf")
+except Exception as error:
+    text = ""
+    print(f"Parse failed: {error}")`
+            },
+            {
+              title: "Context managers",
+              explanation: "with opens a resource and closes it safely when the block finishes.",
+              aiUseCase: "Read prompt templates, JSON config, or small eval files safely.",
+              plainExample: "Open a file, read it, and let Python close it even if something goes wrong.",
+              code: `with open("prompt.txt", "r") as file:
+    prompt_template = file.read()`
+            },
+            {
+              title: "JSON and CSV files",
+              explanation: "JSON is common for structured app data. CSV is common for simple tabular datasets.",
+              aiUseCase: "Store eval cases, tool outputs, or prompt test results.",
+              plainExample: "A golden dataset can be a small JSON file with question, expected answer, and expected source.",
+              code: `import json
+
+with open("eval_cases.json", "r") as file:
+    cases = json.load(file)`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Catching every error silently", better: "Log enough detail to debug the failure" },
+            { mistake: "Forgetting to close files", better: "Use with for file operations" },
+            { mistake: "Treating all parse failures the same", better: "Track failed file name and reason" }
+          ],
+          checklist: ["Use try/except safely", "Read files with with", "Load JSON data", "Handle a failed file without crashing"]
+        }
+      },
+      {
+        n: "1.5",
+        title: "Working with HTTP APIs",
+        items: ["The requests library", "HTTP verbs, headers, status codes", "Authentication (Bearer tokens, API keys)", "Rate limits, retries, exponential backoff with tenacity"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand the HTTP basics needed to call LLM APIs, internal services, and third-party tools safely.",
+          conceptsTitle: "API Concepts",
+          whyItMatters: ["Call LLM providers", "Send tool requests", "Handle auth headers", "Retry rate limits", "Debug failed API calls"],
+          concepts: [
+            {
+              title: "Requests, verbs, and status codes",
+              explanation: "GET reads data, POST sends data, and status codes tell you what happened.",
+              aiUseCase: "Call a model endpoint and handle success, bad requests, or server errors.",
+              plainExample: "A 200 means the call worked. A 401 likely means auth failed. A 429 means slow down.",
+              code: `import requests
+
+response = requests.get("https://api.example.com/health")
+print(response.status_code)`
+            },
+            {
+              title: "Headers and API keys",
+              explanation: "Headers send metadata such as content type and authorization.",
+              aiUseCase: "Most LLM APIs require an Authorization header with a token.",
+              plainExample: "The API key proves your app is allowed to use the model service.",
+              code: `headers = {"Authorization": "Bearer YOUR_API_KEY"}
+response = requests.post(url, headers=headers, json={"prompt": "Hi"})`
+            },
+            {
+              title: "Retries and rate limits",
+              explanation: "External APIs fail. Retry only safe failures, wait between attempts, and respect rate limits.",
+              aiUseCase: "Retry temporary LLM timeouts without sending unlimited duplicate requests.",
+              plainExample: "If the provider says 429, wait before trying again instead of hammering the API.",
+              code: `for attempt in range(3):
+    response = requests.post(url, json=payload)
+    if response.status_code != 429:
+        break`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Hardcoding API keys", better: "Use environment variables or a secrets manager" },
+            { mistake: "Ignoring status codes", better: "Branch behavior by 200, 400, 401, 429, and 500-level errors" },
+            { mistake: "Retrying forever", better: "Set max attempts and timeouts" }
+          ],
+          checklist: ["Make GET and POST calls", "Send headers", "Read status codes", "Handle rate limits"]
+        }
+      },
+      {
+        n: "1.6",
+        title: "Database Connectivity",
+        items: ["psycopg2 for raw PostgreSQL", "SQLAlchemy ORM basics", "Connection pooling and why it matters under load", "Raw SQL when the ORM gets in the way"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Connect Python code to a database and understand when to use raw SQL, an ORM, and connection pooling.",
+          conceptsTitle: "Database Concepts",
+          whyItMatters: ["Store users and chats", "Save agent state", "Query business data", "Track eval runs", "Support production APIs"],
+          concepts: [
+            {
+              title: "Raw SQL connections",
+              explanation: "Raw SQL gives direct control over exactly what query runs.",
+              aiUseCase: "Fetch a user conversation or retrieve rows for a text-to-SQL agent.",
+              plainExample: "Ask Postgres for the latest 10 messages in a conversation.",
+              code: `cursor.execute(
+    "SELECT content FROM messages WHERE conversation_id = %s",
+    (conversation_id,)
+)`
+            },
+            {
+              title: "ORM basics",
+              explanation: "An ORM maps database rows to Python objects and can reduce repetitive SQL.",
+              aiUseCase: "Represent users, messages, documents, and eval runs as Python models.",
+              plainExample: "Instead of writing SQL every time, ask for Message objects from the database.",
+              code: `messages = session.query(Message).filter_by(
+    conversation_id=conversation_id
+).all()`
+            },
+            {
+              title: "Connection pooling",
+              explanation: "A pool reuses database connections instead of opening a new one for every request.",
+              aiUseCase: "Keep a FastAPI app stable when many users chat at once.",
+              plainExample: "Without pooling, traffic spikes can exhaust database connections quickly.",
+              code: `engine = create_engine(database_url, pool_size=5, max_overflow=10)`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Opening a new connection per request", better: "Use pooling through your database library" },
+            { mistake: "Building SQL with string formatting", better: "Use parameters to avoid injection" },
+            { mistake: "Using ORM for complex queries blindly", better: "Use raw SQL when it is clearer or faster" }
+          ],
+          checklist: ["Run a parameterized query", "Explain ORM basics", "Know why pooling matters", "Avoid SQL injection"]
+        }
+      },
+      {
+        n: "1.7",
+        title: "FastAPI",
+        items: ["First /chat endpoint", "Pydantic request/response models", "Dependency injection", "Automatic OpenAPI docs", "Running with uvicorn"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Build a small API endpoint that can receive user input, validate it, and return a structured response.",
+          conceptsTitle: "FastAPI Concepts",
+          whyItMatters: ["Expose AI features", "Validate requests", "Return structured responses", "Generate API docs", "Deploy chat backends"],
+          concepts: [
+            {
+              title: "Routes and endpoints",
+              explanation: "A route connects a URL and HTTP method to a Python function.",
+              aiUseCase: "Create a /chat endpoint that accepts a message and returns a reply.",
+              plainExample: "When a frontend sends a chat message, FastAPI routes it to the chat function.",
+              code: `from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/chat")
+def chat(message: str):
+    return {"reply": message}`
+            },
+            {
+              title: "Request and response models",
+              explanation: "Models describe the shape of data your API accepts and returns.",
+              aiUseCase: "Require a message field and return a predictable reply shape.",
+              plainExample: "The frontend should always know where the response text lives.",
+              code: `from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str`
+            },
+            {
+              title: "Dependencies and docs",
+              explanation: "Dependencies share common logic, and FastAPI automatically creates OpenAPI docs.",
+              aiUseCase: "Reuse auth, database access, or model clients across endpoints.",
+              plainExample: "One dependency can provide the same LLM client to every route.",
+              code: `def get_model_name():
+    return "gpt-4.1-mini"`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Accepting unvalidated dicts", better: "Use request models" },
+            { mistake: "Putting all logic in the route", better: "Call helper functions or services" },
+            { mistake: "Ignoring API docs", better: "Use /docs to test endpoints quickly" }
+          ],
+          checklist: ["Create a route", "Use a request model", "Return JSON", "Run with uvicorn"]
+        }
+      },
+      {
+        n: "1.8",
+        title: "Async Programming",
+        items: ["asyncio fundamentals — event loop, coroutines", "async/await syntax", "asyncio.gather for parallel LLM calls", "asyncio.wait_for for timeout protection", "asyncio.create_task for fire-and-forget logging"],
+        detail: {
+          duration: "60–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Use async Python to run slow network work without blocking the whole AI app.",
+          conceptsTitle: "Async Concepts",
+          whyItMatters: ["Call multiple LLMs", "Run retrieval in parallel", "Avoid blocking APIs", "Handle timeouts", "Log in the background"],
+          concepts: [
+            {
+              title: "async and await",
+              explanation: "async defines a coroutine. await pauses until an async operation finishes without blocking other work.",
+              aiUseCase: "Wait for a model call while the server can still handle other requests.",
+              plainExample: "The app should not freeze just because one provider is slow.",
+              code: `async def call_model(prompt: str) -> str:
+    result = await client.generate(prompt)
+    return result`
+            },
+            {
+              title: "Running work in parallel",
+              explanation: "asyncio.gather runs multiple async tasks and waits for all of them.",
+              aiUseCase: "Call retrieval, moderation, and model routing checks at the same time.",
+              plainExample: "Three independent checks can finish in one second instead of three.",
+              code: `results = await asyncio.gather(
+    search_docs(question),
+    check_policy(question),
+    classify_intent(question),
+)`
+            },
+            {
+              title: "Timeouts and background tasks",
+              explanation: "Timeouts stop slow calls from hanging forever. Background tasks let non-critical work happen later.",
+              aiUseCase: "Fail gracefully if a model call is too slow, but still log the request.",
+              plainExample: "If a provider takes 30 seconds, return a friendly timeout instead of spinning forever.",
+              code: `reply = await asyncio.wait_for(
+    call_model(prompt),
+    timeout=10
+)`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Mixing blocking calls inside async code", better: "Use async libraries for network work" },
+            { mistake: "No timeout", better: "Set a timeout around external calls" },
+            { mistake: "Parallelizing dependent steps", better: "Only gather independent work" }
+          ],
+          checklist: ["Explain async/await", "Use gather", "Add a timeout", "Know when not to use async"]
+        }
+      },
+      {
+        n: "1.9",
+        title: "Git + GitHub Workflows",
+        items: ["Git basics: clone, branch, commit, merge, rebase", "Pull requests, code review, issues, and project boards", "Resolving merge conflicts without panic", "README-driven portfolio repos — architecture, setup, screenshots, eval numbers"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Use Git and GitHub well enough to work on real teams and present portfolio projects professionally.",
+          conceptsTitle: "Git Workflow Concepts",
+          whyItMatters: ["Every job expects it", "Review AI app changes", "Track experiments", "Collaborate on PRs", "Maintain portfolio repos"],
+          concepts: [
+            {
+              title: "Branch, commit, and push",
+              explanation: "A branch isolates work, a commit saves a snapshot, and push uploads it to GitHub.",
+              aiUseCase: "Work on a new RAG feature without breaking main.",
+              plainExample: "Make a branch for eval changes, commit them, then push for review.",
+              code: `git checkout -b add-rag-evals
+git add .
+git commit -m "Add RAG eval cases"
+git push`
+            },
+            {
+              title: "Pull requests and review",
+              explanation: "A pull request proposes changes and lets teammates review them before merge.",
+              aiUseCase: "Show what changed in prompts, retrieval, tests, and deployment config.",
+              plainExample: "A reviewer can catch an unsafe tool permission before it reaches production.",
+              code: `# Open a PR from your pushed branch on GitHub`
+            },
+            {
+              title: "READMEs for portfolio projects",
+              explanation: "A good README explains the problem, architecture, setup, screenshots, and evaluation results.",
+              aiUseCase: "Recruiters and hiring managers need proof that your AI app actually works.",
+              plainExample: "Your repo should answer: what it does, how it works, how to run it, and how well it performs.",
+              code: `# Project README sections
+# Problem
+# Architecture
+# Setup
+# Evaluation
+# Demo`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Committing directly to main", better: "Use feature branches" },
+            { mistake: "Huge unclear commits", better: "Make focused commits with useful messages" },
+            { mistake: "Empty portfolio READMEs", better: "Show architecture, setup, screenshots, and eval numbers" }
+          ],
+          checklist: ["Create a branch", "Make a commit", "Open a pull request", "Write a useful README"]
+        }
+      },
+      {
+        n: "1.10",
+        title: "Linux + Shell Basics",
+        items: ["Navigation, permissions, processes, environment variables", "grep/rg, find, awk/sed basics for logs and data files", "SSH into a server, tail logs, inspect disk/memory/ports", "Shell scripts for repeatable local workflows"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Use the terminal confidently enough to run apps, inspect logs, debug servers, and automate simple workflows.",
+          conceptsTitle: "Shell Concepts",
+          whyItMatters: ["Run dev servers", "Inspect logs", "Manage env vars", "Debug Docker and cloud apps", "Automate repeatable commands"],
+          concepts: [
+            {
+              title: "Navigation and files",
+              explanation: "Basic commands let you move around, list files, read files, and understand where you are.",
+              aiUseCase: "Find logs, prompt files, configs, and datasets quickly.",
+              plainExample: "When an app fails, first confirm you are in the right folder and the config file exists.",
+              code: `pwd
+ls
+cd app
+cat .env.example`
+            },
+            {
+              title: "Environment variables",
+              explanation: "Environment variables store settings outside code, such as API keys and model names.",
+              aiUseCase: "Configure model providers without committing secrets.",
+              plainExample: "Your app reads OPENAI_API_KEY from the environment instead of from source code.",
+              code: `export MODEL_NAME="gpt-4.1-mini"
+echo $MODEL_NAME`
+            },
+            {
+              title: "Logs, processes, and ports",
+              explanation: "Shell commands help you see what is running and why something failed.",
+              aiUseCase: "Check API errors, see whether a server is running, or find a busy port.",
+              plainExample: "If localhost is not loading, check whether the server process is actually running.",
+              code: `tail -f app.log
+ps aux | grep uvicorn
+lsof -i :8000`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Pasting commands without reading them", better: "Understand what each command changes" },
+            { mistake: "Committing .env files", better: "Commit .env.example, not secrets" },
+            { mistake: "Ignoring logs", better: "Read the error before changing code" }
+          ],
+          checklist: ["Navigate files", "Use env vars", "Read logs", "Find running processes"]
+        }
+      },
+      {
+        n: "1.11",
+        title: "Testing Fundamentals",
+        items: ["pytest unit tests for pure Python functions", "FastAPI integration tests with test clients", "Mocking LLM/API calls without hiding failures", "Golden-file and regression tests for prompts, retrieval, and eval outputs"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Write small tests that catch broken helper functions, API routes, prompts, and evaluation workflows before users do.",
+          conceptsTitle: "Testing Concepts",
+          whyItMatters: ["Prevent regressions", "Test prompt helpers", "Check API routes", "Validate eval datasets", "Ship AI apps with more confidence"],
+          concepts: [
+            {
+              title: "Unit tests",
+              explanation: "Unit tests check one small function with known inputs and outputs.",
+              aiUseCase: "Test prompt cleaning, chunk formatting, or routing rules without calling an LLM.",
+              plainExample: "If clean_input breaks, you want to know before it corrupts every prompt.",
+              code: `def test_clean_input():
+    assert clean_input("  hi  ") == "hi"`
+            },
+            {
+              title: "Integration tests",
+              explanation: "Integration tests check that multiple parts work together.",
+              aiUseCase: "Call a FastAPI endpoint and verify the JSON shape.",
+              plainExample: "The route should accept a message and return a reply field every time.",
+              code: `def test_chat_endpoint(client):
+    response = client.post("/chat", json={"message": "hi"})
+    assert response.status_code == 200`
+            },
+            {
+              title: "Golden tests and mocks",
+              explanation: "Golden tests compare output against expected examples. Mocks replace slow or expensive services in tests.",
+              aiUseCase: "Test retrieval formatting or prompt assembly without spending money on model calls.",
+              plainExample: "Use fixed fake model output so the test is stable and cheap.",
+              code: `expected = "Context:\\nchunk one"
+assert build_context(["chunk one"]) == expected`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only testing happy paths", better: "Test empty input, bad input, and failures" },
+            { mistake: "Calling real LLMs in unit tests", better: "Mock model calls for fast, stable tests" },
+            { mistake: "Testing too much at once", better: "Start with small helper-function tests" }
+          ],
+          checklist: ["Write a unit test", "Test a FastAPI route", "Mock an external call", "Add one regression test"]
+        }
+      }
     ]
   },
   {

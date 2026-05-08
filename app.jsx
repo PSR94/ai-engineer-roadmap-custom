@@ -102,7 +102,7 @@ function ModuleDetail({ section }) {
         </ul>
       </DetailSection>
 
-      <DetailSection eyebrow="Concepts" title="Core Python Concepts">
+      <DetailSection eyebrow="Concepts" title={detail.conceptsTitle || "Key Concepts"}>
         <div className="concept-grid">
           {detail.concepts.map((concept, i) => (
             <ConceptCard key={concept.title} concept={concept} index={i} />

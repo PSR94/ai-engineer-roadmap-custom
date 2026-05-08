@@ -22,18 +22,21 @@ function DetailSection({ eyebrow, title, children }) {
 
 function ConceptCard({ concept, index }) {
   return (
-    <article className="concept-card">
-      <div className="concept-card__topline">
+    <details className="concept-card" open={index === 0}>
+      <summary className="concept-card__topline">
         <span className="concept-card__index">{String(index + 1).padStart(2, '0')}</span>
         <h5 className="concept-card__title">{concept.title}</h5>
+        <span className="concept-card__toggle" aria-hidden="true">+</span>
+      </summary>
+      <div className="concept-card__body">
+        <p className="concept-card__text">{concept.explanation}</p>
+        <div className="concept-card__usecase">
+          <span>AI use case</span>
+          <p>{concept.aiUseCase}</p>
+        </div>
+        <CodeBlock code={concept.code} />
       </div>
-      <p className="concept-card__text">{concept.explanation}</p>
-      <div className="concept-card__usecase">
-        <span>AI use case</span>
-        <p>{concept.aiUseCase}</p>
-      </div>
-      <CodeBlock code={concept.code} />
-    </article>
+    </details>
   );
 }
 

@@ -838,6 +838,7 @@ body::before {
   padding: 36px 40px 40px;
   display: flex; flex-direction: column;
   position: relative; overflow: hidden;
+  min-width: 0;
 }
 .tabbox__panel-num {
   font-family: 'JetBrains Mono', monospace;
@@ -868,7 +869,10 @@ body::before {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px; color: var(--c-amber); font-weight: 600;
 }
-.tabbox__panel-content { animation: panelIn 420ms var(--ease-out); }
+.tabbox__panel-content {
+  animation: panelIn 420ms var(--ease-out);
+  min-width: 0;
+}
 @keyframes panelIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -879,6 +883,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  min-width: 0;
 }
 .module-detail__header {
   display: flex;
@@ -966,28 +971,65 @@ body::before {
   gap: 16px;
 }
 .concept-card {
-  padding: 22px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: color-mix(in srgb, var(--bg-elev) 74%, transparent);
+  overflow: hidden;
 }
 .concept-card__topline {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 220ms var(--ease);
+}
+.concept-card__topline::-webkit-details-marker {
+  display: none;
+}
+.concept-card__topline:hover {
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
 }
 .concept-card__index {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--c-amber);
   font-weight: 600;
+  flex-shrink: 0;
 }
 .concept-card__title {
   font-size: 18px;
   line-height: 1.3;
   font-weight: 500;
   color: var(--fg);
+  flex: 1;
+  min-width: 0;
+}
+.concept-card__toggle {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 220ms var(--ease), background 220ms var(--ease);
+}
+.concept-card[open] .concept-card__toggle {
+  transform: rotate(45deg);
+  background: var(--c-rust);
+  border-color: var(--c-rust);
+  color: var(--bg);
+}
+.concept-card__body {
+  padding: 0 20px 20px;
 }
 .concept-card__text {
   font-size: 15px;
@@ -1019,6 +1061,7 @@ body::before {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: color-mix(in srgb, #050505 86%, var(--bg));
+  min-width: 0;
 }
 .codeblock__label {
   padding: 10px 14px;
@@ -1044,6 +1087,7 @@ body::before {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  min-width: 0;
 }
 .mistake-table {
   border: 1px solid var(--line);
@@ -1496,7 +1540,23 @@ body::before {
     border-top: none;
   }
   .concept-card {
-    padding: 18px;
+    border-radius: 14px;
+  }
+  .concept-card__topline {
+    align-items: flex-start;
+    padding: 16px;
+  }
+  .concept-card__body {
+    padding: 0 16px 16px;
+  }
+  .concept-card__title {
+    font-size: 16px;
+  }
+  .codeblock pre {
+    padding: 14px;
+  }
+  .codeblock code {
+    font-size: 11px;
   }
   .capstone {
     grid-template-columns: 1fr;

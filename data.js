@@ -200,6 +200,19 @@ client = LLMClient(model="gpt-4.1-mini")`
         return cls(model="gpt-4.1-mini")`
             },
             {
+              title: "Inheritance, encapsulation, and polymorphism",
+              explanation: "Inheritance shares behavior, encapsulation hides internal details, and polymorphism lets different objects expose the same method name.",
+              aiUseCase: "Use the same interface for different model providers, retrievers, or tools.",
+              plainExample: "OpenAIClient and AnthropicClient can both have a generate() method, even if they work differently inside.",
+              code: `class ModelClient:
+    def generate(self, prompt: str) -> str:
+        raise NotImplementedError
+
+class MockClient(ModelClient):
+    def generate(self, prompt: str) -> str:
+        return "fake reply"`
+            },
+            {
               title: "Dataclasses and Pydantic-style models",
               explanation: "Dataclasses reduce boilerplate for simple data containers. Pydantic adds validation and is common in FastAPI and tool schemas.",
               aiUseCase: "Represent a retrieved document chunk or tool input with clear fields.",
@@ -260,6 +273,17 @@ chunks_by_doc = defaultdict(list)`
 
 jobs = deque(["doc1.pdf", "doc2.pdf"])
 next_job = jobs.popleft()`
+            },
+            {
+              title: "NamedTuple and when to use which",
+              explanation: "NamedTuple is a lightweight fixed shape. Use lists for ordered values, dicts for lookup, sets for uniqueness, and named tuples for simple records.",
+              aiUseCase: "Return a small retrieval result with a text value and score.",
+              plainExample: "If every search result needs text and score, a named tuple makes that shape clear.",
+              code: `from typing import NamedTuple
+
+class SearchHit(NamedTuple):
+    text: str
+    score: float`
             }
           ],
           commonMistakes: [
@@ -294,6 +318,17 @@ except Exception as error:
     print(f"Parse failed: {error}")`
             },
             {
+              title: "Custom exception classes",
+              explanation: "A custom exception gives a failure a clear name so callers can handle it intentionally.",
+              aiUseCase: "Raise a specific error when a document cannot be parsed or a prompt is invalid.",
+              plainExample: "InvalidPromptError is easier to understand than a generic Exception.",
+              code: `class InvalidPromptError(Exception):
+    pass
+
+if not prompt.strip():
+    raise InvalidPromptError("Prompt is empty")`
+            },
+            {
               title: "Context managers",
               explanation: "with opens a resource and closes it safely when the block finishes.",
               aiUseCase: "Read prompt templates, JSON config, or small eval files safely.",
@@ -302,10 +337,10 @@ except Exception as error:
     prompt_template = file.read()`
             },
             {
-              title: "JSON and CSV files",
-              explanation: "JSON is common for structured app data. CSV is common for simple tabular datasets.",
-              aiUseCase: "Store eval cases, tool outputs, or prompt test results.",
-              plainExample: "A golden dataset can be a small JSON file with question, expected answer, and expected source.",
+              title: "JSON, CSV, text, and binary files",
+              explanation: "JSON is common for structured app data, CSV for tables, text for prompts/logs, and binary mode for PDFs or images.",
+              aiUseCase: "Store eval cases, prompt templates, logs, or uploaded documents.",
+              plainExample: "A golden dataset can be JSON, while uploaded PDFs must be read as binary.",
               code: `import json
 
 with open("eval_cases.json", "r") as file:
@@ -351,8 +386,18 @@ print(response.status_code)`
 response = requests.post(url, headers=headers, json={"prompt": "Hi"})`
             },
             {
-              title: "Retries and rate limits",
-              explanation: "External APIs fail. Retry only safe failures, wait between attempts, and respect rate limits.",
+              title: "Authentication with bearer tokens",
+              explanation: "Bearer tokens are a common way to prove API access. Keep them out of source code.",
+              aiUseCase: "Send provider keys or internal service tokens safely through environment variables.",
+              plainExample: "Your code reads the key from the environment, then sends it in the Authorization header.",
+              code: `import os
+
+api_key = os.environ["OPENAI_API_KEY"]
+headers = {"Authorization": f"Bearer {api_key}"}`
+            },
+            {
+              title: "Retries, rate limits, and exponential backoff",
+              explanation: "External APIs fail. Retry only safe failures, wait longer between attempts, and respect rate limits.",
               aiUseCase: "Retry temporary LLM timeouts without sending unlimited duplicate requests.",
               plainExample: "If the provider says 429, wait before trying again instead of hammering the API.",
               code: `for attempt in range(3):
@@ -382,8 +427,8 @@ response = requests.post(url, headers=headers, json={"prompt": "Hi"})`
           whyItMatters: ["Store users and chats", "Save agent state", "Query business data", "Track eval runs", "Support production APIs"],
           concepts: [
             {
-              title: "Raw SQL connections",
-              explanation: "Raw SQL gives direct control over exactly what query runs.",
+              title: "psycopg2 and raw PostgreSQL",
+              explanation: "psycopg2 is a common low-level PostgreSQL driver. Raw SQL gives direct control over exactly what query runs.",
               aiUseCase: "Fetch a user conversation or retrieve rows for a text-to-SQL agent.",
               plainExample: "Ask Postgres for the latest 10 messages in a conversation.",
               code: `cursor.execute(
@@ -406,6 +451,15 @@ response = requests.post(url, headers=headers, json={"prompt": "Hi"})`
               aiUseCase: "Keep a FastAPI app stable when many users chat at once.",
               plainExample: "Without pooling, traffic spikes can exhaust database connections quickly.",
               code: `engine = create_engine(database_url, pool_size=5, max_overflow=10)`
+            },
+            {
+              title: "Raw SQL when the ORM gets in the way",
+              explanation: "ORMs are convenient, but raw SQL can be clearer for complex joins, analytics, and performance tuning.",
+              aiUseCase: "Use raw SQL for a text-to-SQL validator or a complex reporting query.",
+              plainExample: "If an ORM query becomes unreadable, write the SQL directly and parameterize it.",
+              code: `cursor.execute(
+    "SELECT user_id, COUNT(*) FROM messages GROUP BY user_id"
+)`
             }
           ],
           commonMistakes: [
@@ -458,6 +512,13 @@ class ChatRequest(BaseModel):
               plainExample: "One dependency can provide the same LLM client to every route.",
               code: `def get_model_name():
     return "gpt-4.1-mini"`
+            },
+            {
+              title: "Running with uvicorn",
+              explanation: "uvicorn runs your FastAPI app locally or inside a server process.",
+              aiUseCase: "Start a local AI API backend while testing a frontend or agent flow.",
+              plainExample: "Run the server, open /docs, and test the chat endpoint.",
+              code: `uvicorn app:app --reload`
             }
           ],
           commonMistakes: [
@@ -481,6 +542,14 @@ class ChatRequest(BaseModel):
           whyItMatters: ["Call multiple LLMs", "Run retrieval in parallel", "Avoid blocking APIs", "Handle timeouts", "Log in the background"],
           concepts: [
             {
+              title: "Event loop and coroutines",
+              explanation: "The event loop schedules async work. Coroutines are async functions waiting to run.",
+              aiUseCase: "Let many slow model or retrieval calls share one server process efficiently.",
+              plainExample: "While one request waits for an API, the event loop can start work on another request.",
+              code: `async def fetch_context(question: str):
+    return await retriever.search(question)`
+            },
+            {
               title: "async and await",
               explanation: "async defines a coroutine. await pauses until an async operation finishes without blocking other work.",
               aiUseCase: "Wait for a model call while the server can still handle other requests.",
@@ -502,7 +571,7 @@ class ChatRequest(BaseModel):
             },
             {
               title: "Timeouts and background tasks",
-              explanation: "Timeouts stop slow calls from hanging forever. Background tasks let non-critical work happen later.",
+              explanation: "wait_for stops slow calls from hanging forever. create_task starts non-critical work in the background.",
               aiUseCase: "Fail gracefully if a model call is too slow, but still log the request.",
               plainExample: "If a provider takes 30 seconds, return a friendly timeout instead of spinning forever.",
               code: `reply = await asyncio.wait_for(
@@ -532,11 +601,12 @@ class ChatRequest(BaseModel):
           whyItMatters: ["Every job expects it", "Review AI app changes", "Track experiments", "Collaborate on PRs", "Maintain portfolio repos"],
           concepts: [
             {
-              title: "Branch, commit, and push",
-              explanation: "A branch isolates work, a commit saves a snapshot, and push uploads it to GitHub.",
+              title: "Clone, branch, commit, and push",
+              explanation: "clone downloads a repo, a branch isolates work, a commit saves a snapshot, and push uploads it to GitHub.",
               aiUseCase: "Work on a new RAG feature without breaking main.",
               plainExample: "Make a branch for eval changes, commit them, then push for review.",
-              code: `git checkout -b add-rag-evals
+              code: `git clone https://github.com/you/app.git
+git checkout -b add-rag-evals
 git add .
 git commit -m "Add RAG eval cases"
 git push`
@@ -547,6 +617,21 @@ git push`
               aiUseCase: "Show what changed in prompts, retrieval, tests, and deployment config.",
               plainExample: "A reviewer can catch an unsafe tool permission before it reaches production.",
               code: `# Open a PR from your pushed branch on GitHub`
+            },
+            {
+              title: "Merge, rebase, and conflicts",
+              explanation: "merge combines branches, rebase replays your work on newer code, and conflicts happen when Git needs a human choice.",
+              aiUseCase: "Keep your AI feature branch updated while teammates change the same files.",
+              plainExample: "If two people edit the prompt file, Git may ask which version to keep.",
+              code: `git pull --rebase
+git status`
+            },
+            {
+              title: "Issues and project boards",
+              explanation: "Issues track work, bugs, and decisions. Boards organize what is planned, in progress, and done.",
+              aiUseCase: "Track tasks like add evals, improve retrieval, fix latency, and update README.",
+              plainExample: "Each capstone should have issues for setup, ingestion, evals, deployment, and demo polish.",
+              code: `# Use GitHub Issues for task tracking`
             },
             {
               title: "READMEs for portfolio projects",
@@ -592,6 +677,14 @@ cd app
 cat .env.example`
             },
             {
+              title: "Permissions",
+              explanation: "Permissions control who can read, write, or execute files.",
+              aiUseCase: "Fix scripts that cannot run or protect secret files from broad access.",
+              plainExample: "If a setup script says permission denied, it may need execute permission.",
+              code: `chmod +x setup.sh
+ls -l setup.sh`
+            },
+            {
               title: "Environment variables",
               explanation: "Environment variables store settings outside code, such as API keys and model names.",
               aiUseCase: "Configure model providers without committing secrets.",
@@ -600,13 +693,31 @@ cat .env.example`
 echo $MODEL_NAME`
             },
             {
-              title: "Logs, processes, and ports",
-              explanation: "Shell commands help you see what is running and why something failed.",
+              title: "Search commands for logs and files",
+              explanation: "rg, grep, find, awk, and sed help you search and reshape text quickly.",
+              aiUseCase: "Find errors in logs, locate prompt files, or inspect generated outputs.",
+              plainExample: "Search all logs for timeout before changing code.",
+              code: `rg "timeout" logs/
+find . -name "*.json"`
+            },
+            {
+              title: "SSH, logs, processes, and ports",
+              explanation: "Shell commands help you connect to servers and see what is running or failing.",
               aiUseCase: "Check API errors, see whether a server is running, or find a busy port.",
               plainExample: "If localhost is not loading, check whether the server process is actually running.",
-              code: `tail -f app.log
+              code: `ssh user@server
+tail -f app.log
 ps aux | grep uvicorn
 lsof -i :8000`
+            },
+            {
+              title: "Shell scripts",
+              explanation: "Shell scripts save repeatable command sequences in one file.",
+              aiUseCase: "Run setup, tests, seed data, or local servers consistently.",
+              plainExample: "A run-local.sh script helps you start the same app the same way every time.",
+              code: `#!/usr/bin/env bash
+python -m pytest
+uvicorn app:app --reload`
             }
           ],
           commonMistakes: [
@@ -653,6 +764,15 @@ lsof -i :8000`
               plainExample: "Use fixed fake model output so the test is stable and cheap.",
               code: `expected = "Context:\\nchunk one"
 assert build_context(["chunk one"]) == expected`
+            },
+            {
+              title: "Eval regression tests",
+              explanation: "Eval regression tests make sure prompt, retrieval, or output changes do not break known examples.",
+              aiUseCase: "Run a small golden dataset before merging a RAG change.",
+              plainExample: "If a known question used to cite the right document, the test should catch when it stops.",
+              code: `def test_expected_source():
+    answer = run_rag("What is the refund policy?")
+    assert "policy.pdf" in answer.sources`
             }
           ],
           commonMistakes: [

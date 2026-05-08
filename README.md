@@ -2,7 +2,7 @@
 
 An interactive roadmap for becoming a production-ready AI engineer in 2026.
 
-The site covers a 26-week learning path across Python foundations, LLM mental models, prompt engineering, cloud infrastructure, RAG, tools, MCP, single-agent systems, memory, multi-agent orchestration, guardrails, deployment, and capstone projects.
+The site covers a 26-week learning path across Python, Git/GitHub, Linux, testing, LLM mental models, prompt engineering, frontend basics, data engineering, RAG, tools, MCP, single-agent systems, memory, multi-agent orchestration, guardrails, observability, security, Docker, CI/CD, deployment, and capstone projects.
 
 ## Live Site
 

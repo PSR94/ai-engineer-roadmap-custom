@@ -4,10 +4,10 @@ window.ROADMAP = [
   {
     id: 1,
     title: "Python Foundations",
-    short: "Python + Async Engineering",
+    short: "Python + Engineering Basics",
     color: "teal-deep",
     weeks: "Weeks 1–3",
-    weeksDetail: "3 weeks · 8 modules",
+    weeksDetail: "3 weeks · 11 modules",
     difficulty: 2,
     summary: "Every agent framework runs on Python. Skip this and everything later breaks in mysterious ways.",
     endState: "You can build a FastAPI endpoint that calls three different LLMs in parallel, times out the slow one, and logs the result without blocking the response.",
@@ -19,7 +19,10 @@ window.ROADMAP = [
       { n: "1.5", title: "Working with HTTP APIs", items: ["The requests library", "HTTP verbs, headers, status codes", "Authentication (Bearer tokens, API keys)", "Rate limits, retries, exponential backoff with tenacity"] },
       { n: "1.6", title: "Database Connectivity", items: ["psycopg2 for raw PostgreSQL", "SQLAlchemy ORM basics", "Connection pooling and why it matters under load", "Raw SQL when the ORM gets in the way"] },
       { n: "1.7", title: "FastAPI", items: ["First /chat endpoint", "Pydantic request/response models", "Dependency injection", "Automatic OpenAPI docs", "Running with uvicorn"] },
-      { n: "1.8", title: "Async Programming", items: ["asyncio fundamentals — event loop, coroutines", "async/await syntax", "asyncio.gather for parallel LLM calls", "asyncio.wait_for for timeout protection", "asyncio.create_task for fire-and-forget logging"] }
+      { n: "1.8", title: "Async Programming", items: ["asyncio fundamentals — event loop, coroutines", "async/await syntax", "asyncio.gather for parallel LLM calls", "asyncio.wait_for for timeout protection", "asyncio.create_task for fire-and-forget logging"] },
+      { n: "1.9", title: "Git + GitHub Workflows", items: ["Git basics: clone, branch, commit, merge, rebase", "Pull requests, code review, issues, and project boards", "Resolving merge conflicts without panic", "README-driven portfolio repos — architecture, setup, screenshots, eval numbers"] },
+      { n: "1.10", title: "Linux + Shell Basics", items: ["Navigation, permissions, processes, environment variables", "grep/rg, find, awk/sed basics for logs and data files", "SSH into a server, tail logs, inspect disk/memory/ports", "Shell scripts for repeatable local workflows"] },
+      { n: "1.11", title: "Testing Fundamentals", items: ["pytest unit tests for pure Python functions", "FastAPI integration tests with test clients", "Mocking LLM/API calls without hiding failures", "Golden-file and regression tests for prompts, retrieval, and eval outputs"] }
     ]
   },
   {
@@ -46,7 +49,7 @@ window.ROADMAP = [
     short: "Prompt Engineering",
     color: "purple",
     weeks: "Weeks 5–7",
-    weeksDetail: "3 weeks · 7 modules",
+    weeksDetail: "3 weeks · 8 modules",
     difficulty: 2,
     summary: "The pivot from \"ChatGPT user\" to \"engineer who controls LLMs.\"",
     endState: "You can take a flaky prompt that works \"sometimes\" and systematically make it reliable — and cut its cost in half with caching while you're at it.",
@@ -57,7 +60,8 @@ window.ROADMAP = [
       { n: "3.4", title: "Core techniques", items: ["Zero-shot", "Few-shot with curated examples", "COSTAR framework (Context, Objective, Style, Tone, Audience, Response)", "Iterative refinement loop"] },
       { n: "3.5", title: "Applied prompt patterns", items: ["Extraction (entities, dates, relationships)", "Classification (intent, sentiment, routing)", "Transformation (summarize, translate, reformat)", "Generation (reports, SQL, code)", "Decomposition (break complex queries into sub-prompts)"] },
       { n: "3.6", title: "Advanced reasoning techniques", items: ["Chain of Thought — \"think step by step\"", "Self-Consistency — sample multiple paths, majority vote", "Self-Refine — generate, critique, refine loop", "Least-to-Most — decompose hard problems into ordered sub-problems", "Tree of Thought (research-flavoured; mention but don't drill)"] },
-      { n: "3.7", title: "Prompt management & cost in production", items: ["Versioning prompts in code vs as managed resources", "A/B testing prompt variants", "AWS Bedrock Prompt Management for the lifecycle without code deploys", "Prompt caching — Anthropic cache_control and OpenAI's automatic cached input pricing (5–10× cost cuts on long system prompts)", "DSPy — programmatic prompt optimisation when you want the framework to tune your prompts for you (mention; depth is optional)"] }
+      { n: "3.7", title: "Prompt management & cost in production", items: ["Versioning prompts in code vs as managed resources", "A/B testing prompt variants", "AWS Bedrock Prompt Management for the lifecycle without code deploys", "Prompt caching — Anthropic cache_control and OpenAI's automatic cached input pricing (5–10× cost cuts on long system prompts)", "DSPy — programmatic prompt optimisation when you want the framework to tune your prompts for you (mention; depth is optional)"] },
+      { n: "3.8", title: "Frontend basics for AI demos", items: ["HTML/CSS/JS fundamentals — forms, fetch, loading states, error states", "Streamlit for internal tools and quick evaluation UIs", "React/Next.js basics for a real chat experience", "Streaming UI patterns: token stream, cancel button, retry, citations, trace link"] }
     ]
   },
   {
@@ -66,7 +70,7 @@ window.ROADMAP = [
     short: "Ingestion Pipeline + RAG",
     color: "pink",
     weeks: "Weeks 8–12",
-    weeksDetail: "5 weeks · 9 modules",
+    weeksDetail: "5 weeks · 10 modules",
     difficulty: 4,
     capstone: 1,
     summary: "The longest phase. RAG looks simple in tutorials and is brutal in production.",
@@ -80,7 +84,8 @@ window.ROADMAP = [
       { n: "4.6", title: "Vector databases", items: ["Pinecone, Weaviate, pgvector", "Chroma for local dev", "S3 Vector Buckets, OpenSearch", "HNSW vs IVF indexes", "Decision matrix: managed (Pinecone) vs self-hosted (Weaviate, Qdrant) vs in-process (Chroma, FAISS) vs already-in-your-stack (pgvector)"] },
       { n: "4.7", title: "Hybrid retrieval & next-gen retrievers", items: ["Vector search + BM25 keyword", "Reranking with cross-encoders (Cohere Rerank, BGE)", "Metadata filtering", "Query expansion", "Late-interaction retrievers — ColBERT (text), ColPali (multimodal/PDF pages as images) — when they beat dense retrieval and what they cost"] },
       { n: "4.8", title: "Graph-augmented RAG", items: ["Neo4j basics", "Cypher query language", "When graph relationships beat pure vector search", "Multi-hop queries"] },
-      { n: "4.9", title: "RAG evaluation — the part most courses skip", items: ["LLM-as-judge: RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Deterministic retrieval metrics: Precision@k, Recall@k, F1, Hit Rate@k, MRR, NDCG@k", "Tooling: Ragas (the de-facto eval framework), MLflow for run logging, LangSmith for tracing", "Golden datasets: Q&A pairs with expected chunks, regression testing on every code change"] }
+      { n: "4.9", title: "RAG evaluation — the part most courses skip", items: ["LLM-as-judge: RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Deterministic retrieval metrics: Precision@k, Recall@k, F1, Hit Rate@k, MRR, NDCG@k", "Tooling: Ragas (the de-facto eval framework), MLflow for run logging, LangSmith for tracing", "Golden datasets: Q&A pairs with expected chunks, regression testing on every code change"] },
+      { n: "4.10", title: "Data engineering basics for AI systems", items: ["ETL vs ELT — ingest, clean, normalize, enrich, load", "Batch jobs and worker queues for document processing", "SQL joins, indexes, migrations, and query plans", "Object storage layouts: raw / processed / embeddings / eval artifacts", "Idempotency and retry-safe jobs so reprocessing does not duplicate data"] }
     ]
   },
   {
@@ -89,19 +94,20 @@ window.ROADMAP = [
     short: "Tools, MCP & Single Agents",
     color: "emerald",
     weeks: "Weeks 13–16",
-    weeksDetail: "4 weeks · 8 modules",
+    weeksDetail: "4 weeks · 9 modules",
     difficulty: 4,
     summary: "The brain gets hands and legs.",
     endState: "You can build a single agent that searches the web, reads internal docs, queries a DB, and emails you a summary — and stops if it tries to do something dumb.",
     sections: [
-      { n: "5.1", title: "Function calling / tool use", items: ["Tool schemas (JSON Schema, Pydantic)", "How the LLM decides which tool to call", "Parsing tool-call responses", "Handling tool errors gracefully"] },
+      { n: "5.1", title: "Function calling / tool use", items: ["Tool schemas (JSON Schema, Pydantic)", "How the LLM decides which tool to call", "Structured outputs for predictable downstream code", "Parsing tool-call responses", "Handling tool errors gracefully"] },
       { n: "5.2", title: "Tool design principles", items: ["One tool, one job", "Clear docstrings — the LLM reads them", "Return structured data, not free text", "Fallbacks inside tools, not in the agent"] },
       { n: "5.3", title: "MCP — Model Context Protocol", items: ["What MCP is and why it exists (universal adapter for tools)", "MCP servers vs MCP clients", "Using existing MCP servers (filesystem, GitHub, Slack)", "Building your own MCP server", "stdio vs HTTP transports", "MCP is moving fast — bookmark modelcontextprotocol.io and re-read the spec every few months; the registry, auth model, and resource semantics are still evolving"] },
       { n: "5.4", title: "The ReAct pattern", items: ["Reasoning + Acting loop", "Thought → action → observation → thought", "Why \"thinking\" models exist", "When to force ReAct vs let the model decide"] },
       { n: "5.5", title: "LangChain agents", items: ["create_agent — model + tools + middleware + store", "@tool(parse_docstring=True) for auto schemas", "Parallel tool execution with asyncio.gather", "Structured outputs via Pydantic"] },
-      { n: "5.6", title: "Human in the loop", items: ["HumanInTheLoopMiddleware for sensitive operations", "Checkpointers and InMemorySaver", "Resume flows after human approval", "When to pause (DB writes, payments, emails)"] },
-      { n: "5.7", title: "Tool security", items: ["Retrieval Sanitiser — strip injection patterns from tool results", "Read-only DB enforcement", "Max retries per tool", "Timeouts on every external call"] },
-      { n: "5.8", title: "Computer use & app SDKs — agents with eyes and a mouse", items: ["Anthropic Computer Use — agent takes screenshots and drives a desktop/browser", "OpenAI Operator / Apps SDK — agent runs inside ChatGPT or controls a browser tab", "Browser-automation agents (Playwright + LLM, browser-use, Stagehand)", "When this is the right tool vs API integration", "Sandboxing, audit trails, and \"are you sure?\" gates — these agents can do real damage"] }
+      { n: "5.6", title: "Human approval flows", items: ["Human-in-the-loop gates for sensitive operations", "Approval objects: who approved, what changed, when it expires", "Checkpointers and resumable execution after approval", "When to pause (DB writes, payments, emails, external messages, production changes)"] },
+      { n: "5.7", title: "Tool permissions and least privilege", items: ["Read-only vs write tools — separate them at the schema and IAM level", "Allow-lists for tables, directories, domains, and API operations", "Per-tool timeouts, max retries, max spend, and max records touched", "Audit logs for every tool call: input, output, actor, trace ID"] },
+      { n: "5.8", title: "Agent tracing and debugging", items: ["Trace every model call, tool call, handoff, retry, and guardrail decision", "Correlate trace IDs with backend logs and user sessions", "Inspect token usage, latency, tool failures, and bad routing decisions", "Use trace screenshots in portfolio demos and incident reviews"] },
+      { n: "5.9", title: "Computer use & app SDKs — agents with eyes and a mouse", items: ["Anthropic Computer Use — agent takes screenshots and drives a desktop/browser", "OpenAI Operator / Apps SDK — agent runs inside ChatGPT or controls a browser tab", "Browser-automation agents (Playwright + LLM, browser-use, Stagehand)", "When this is the right tool vs API integration", "Sandboxing, audit trails, and \"are you sure?\" gates — these agents can do real damage"] }
     ]
   },
   {
@@ -153,15 +159,17 @@ window.ROADMAP = [
     short: "Guardrails + LLMOps",
     color: "mustard",
     weeks: "Weeks 23–24",
-    weeksDetail: "2 weeks · 4 modules",
+    weeksDetail: "2 weeks · 6 modules",
     difficulty: 3,
     summary: "You know what to build. Now make it not embarrass you in production — measure failure, catch it before users do, and prove the agent is improving release-over-release.",
     endState: "You can put a number on how often your agent fails, and ship it anyway with confidence.",
     sections: [
       { n: "8.1", title: "Three-layer guardrail architecture", items: ["Input Guardrails (gateway, <1ms, deterministic): prompt-injection regex, PII redaction, out-of-domain rejection, toxic filter — code-based, never LLM", "Output Guardrails (LLM-judge OK): faithfulness, contradiction check, medical/legal disclaimers when confidence < threshold, hard-fail to safe fallback", "Action Guardrails (inside tools, pure functions): max retries, max tool calls per request, query validation, read-only DB, top_k caps"] },
       { n: "8.2", title: "AWS Bedrock Guardrails", items: ["Contextual grounding", "Automated reasoning checks", "Harmful content filtering", "Topic blocking", "When managed guardrails are enough vs custom"] },
-      { n: "8.3", title: "LLMOps — observability", items: ["LangSmith / LangFuse for traces", "Token cost dashboards", "Latency percentiles (p50, p95, p99)", "Failure rate by tool, by route, by model"] },
-      { n: "8.4", title: "LLMOps — evaluation in production", items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality"] }
+      { n: "8.3", title: "Agent safety patterns", items: ["Tool permission model: deny by default, explicit grants per route/user/tool", "Human approval for high-impact actions and ambiguous tool outputs", "Handoffs between specialized agents with clear ownership and stop conditions", "Structured outputs before side effects — validate first, act second"] },
+      { n: "8.4", title: "LLMOps — observability", items: ["LangSmith / LangFuse for traces", "Token cost dashboards", "Latency percentiles (p50, p95, p99)", "Failure rate by tool, by route, by model", "Trace sampling and redaction so observability does not leak user data"] },
+      { n: "8.5", title: "LLMOps — evaluation in production", items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality", "Eval tests for refusals, tool permissions, structured outputs, and human-approval paths"] },
+      { n: "8.6", title: "Security basics for AI apps", items: ["API keys, secrets, and environment variables — never commit credentials", "Authentication vs authorization: who are you, and what can you do?", "Rate limits, quotas, abuse prevention, and spend caps", "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk"] }
     ]
   },
   {
@@ -170,7 +178,7 @@ window.ROADMAP = [
     short: "Cloud + Deployment",
     color: "indigo",
     weeks: "Weeks 25–26",
-    weeksDetail: "2 weeks · 6 modules",
+    weeksDetail: "2 weeks · 8 modules",
     difficulty: 3,
     capstone: 3,
     summary: "The final mile. Minimum AWS to make everything earlier deployable, plus how to actually put an agent in production and keep costs sane.",
@@ -180,8 +188,10 @@ window.ROADMAP = [
       { n: "9.2", title: "Compute", items: ["Lambda — serverless event-driven flows", "ECS Fargate — serverless containers for long-running agents", "ECR — container registry"] },
       { n: "9.3", title: "Networking & access", items: ["VPC, subnets, security groups (just enough not to break)", "IAM roles and policies", "API Gateway for exposing endpoints"] },
       { n: "9.4", title: "AI-specific services (and other clouds)", items: ["AWS Bedrock — managed foundation models", "AWS AgentCore — production agent infrastructure", "Bedrock embeddings", "Equivalents on other clouds: GCP Vertex AI (Model Garden, Agent Builder) and Azure AI Foundry (model catalog, prompt flow) — same primitives, different SKUs"] },
-      { n: "9.5", title: "Deployment & realtime delivery", items: ["Dockerizing FastAPI agents", "ECS Fargate task definitions", "API Gateway + ALB routing", "Secrets management with AWS Secrets Manager", "Environment promotion (dev → staging → prod)", "Streaming responses to chat UIs — SSE for one-way token streaming, WebSockets when you also need client → server messages mid-stream"] },
-      { n: "9.6", title: "Cost & capacity control", items: ["Semantic cache HIT rate as a KPI", "Model routing — cheap model for simple queries, expensive for complex", "Prompt compression", "Max-tokens caps", "Load testing with locust or k6 — agents fall over under concurrency long before the LLM does; rate-limit at the gateway, not the model"] }
+      { n: "9.5", title: "Docker and reproducible local dev", items: ["Dockerfile for FastAPI agents", "docker compose for app + Postgres + Redis + worker", ".dockerignore, small images, healthchecks, non-root users", "Rebuild from scratch on another machine and get the same app"] },
+      { n: "9.6", title: "Deployment & realtime delivery", items: ["ECS Fargate task definitions", "API Gateway + ALB routing", "Secrets management with AWS Secrets Manager", "Environment promotion (dev → staging → prod)", "Streaming responses to chat UIs — SSE for one-way token streaming, WebSockets when you also need client → server messages mid-stream"] },
+      { n: "9.7", title: "CI/CD with GitHub Actions", items: ["Run lint, type checks, unit tests, integration tests, and eval tests on every PR", "Build and push Docker images to ECR", "Deploy to staging automatically, production with manual approval", "Rollback strategy, release notes, and environment-specific secrets"] },
+      { n: "9.8", title: "Production observability & cost control", items: ["Structured logs with request IDs and trace IDs", "Metrics: request count, error rate, p95 latency, queue depth, token spend", "Alerts for tool failure spikes, cost anomalies, and eval regressions", "Semantic cache HIT rate as a KPI", "Model routing — cheap model for simple queries, expensive for complex", "Load testing with locust or k6 — agents fall over under concurrency long before the LLM does; rate-limit at the gateway, not the model"] }
     ]
   }
 ];
@@ -200,7 +210,7 @@ window.CAPSTONES = [
       "Evaluation harness with golden dataset, Precision@k / Recall@k / RAG Triad",
       "FastAPI Q&A endpoint with citation-backed answers"
     ],
-    stack: ["Docling", "Pinecone", "Neo4j", "ECS Fargate", "DynamoDB", "S3", "Bedrock embeddings", "LangSmith"],
+    stack: ["Docling", "Pinecone", "Neo4j", "Docker", "ECS Fargate", "DynamoDB", "S3", "Bedrock embeddings", "LangSmith", "GitHub Actions"],
     proves: "You can build production RAG, not a Streamlit demo."
   },
   {
@@ -211,12 +221,13 @@ window.CAPSTONES = [
     build: [
       "Multi-agent: Planner → SQL Writer → Validator → Executor → Explainer",
       "Schema-aware context injection per query (only relevant tables sent to writer)",
-      "LangGraph orchestration with conditional routing and retry loops",
-      "Read-only DB enforcement, query timeout, max-row caps",
+      "LangGraph orchestration with conditional routing, durable execution, and retry loops",
+      "Read-only DB enforcement, query timeout, max-row caps, and per-tool permission checks",
+      "Human approval flow before exporting, emailing, or persisting generated analysis",
       "Streamlit frontend, FastAPI backend, RDS PostgreSQL with realistic data",
-      "Benchmarked on a golden NLQ test set, target 85%+ accuracy"
+      "Benchmarked on a golden NLQ test set, target 85%+ accuracy, with trace links for failures"
     ],
-    stack: ["LangChain", "LangGraph", "LangSmith", "AgentCore", "RDS PostgreSQL", "FastAPI", "Streamlit", "Bedrock"],
+    stack: ["LangChain", "LangGraph", "LangSmith", "AgentCore", "RDS PostgreSQL", "FastAPI", "Streamlit", "Docker", "Bedrock"],
     proves: "You can orchestrate multiple specialised agents safely against real production data."
   },
   {
@@ -228,11 +239,11 @@ window.CAPSTONES = [
       "Real ClinicalTrials.gov dataset ingestion (or your domain equivalent)",
       "Hybrid knowledge layer: Pinecone for unstructured PDFs + Neo4j for trial-drug-condition relationships",
       "Multi-hop relationship queries (\"what other trials used drug X for condition Y?\")",
-      "Full three-layer guardrails — disclaimer auto-injection, contradiction checks, action limits",
+      "Full three-layer guardrails — disclaimer auto-injection, contradiction checks, action limits, human approval gates",
       "Evidence-backed answers — every claim cites the source chunk",
-      "Deployed on AWS with monitoring, regression tests in CI, semantic cache, cost dashboard"
+      "Deployed on AWS with structured logs, traces, metrics, regression tests in CI, semantic cache, cost dashboard"
     ],
-    stack: ["LangChain", "LangGraph", "Neo4j + Cypher", "Pinecone", "Bedrock + AgentCore + Lambda", "S3", "LangSmith", "MLflow"],
+    stack: ["LangChain", "LangGraph", "Neo4j + Cypher", "Pinecone", "Bedrock + AgentCore + Lambda", "S3", "GitHub Actions", "LangSmith", "MLflow"],
     proves: "You can ship an agent into a regulated domain without it killing anyone (or your career)."
   }
 ];
@@ -254,9 +265,9 @@ window.OUT_OF_SCOPE = [
     pointer: "Andrej Karpathy's \"Neural Networks: Zero to Hero\" + the \"Let's build GPT\" video, on weekends."
   },
   {
-    title: "Frontend frameworks (Next.js, React, Tailwind)",
-    why: "You need enough to ship a Streamlit or basic chat UI for capstones. Beyond that, partner with a frontend engineer or a design system. Don't get lost in framework wars.",
-    pointer: "Streamlit for internal tools, Vercel AI SDK + Next.js when you need a real product UI."
+    title: "Advanced frontend specialization",
+    why: "You need enough frontend to ship usable demos, review tools, and chat interfaces. You do not need to become a full-time product frontend engineer during this roadmap.",
+    pointer: "Learn Streamlit first, then enough React/Next.js and the Vercel AI SDK to build a polished chat UI with streaming, citations, retries, and trace links."
   }
 ];
 

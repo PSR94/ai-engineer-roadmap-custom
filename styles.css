@@ -874,6 +874,241 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* rich module detail */
+.module-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.module-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+.module-detail__title {
+  margin-bottom: 0;
+}
+.module-detail__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.module-detail__badges span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--bg);
+}
+.module-detail__badges .module-detail__badge-required {
+  color: var(--bg);
+  background: var(--c-rust);
+  border-color: var(--c-rust);
+}
+.module-detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.module-detail__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-rust);
+}
+.module-detail__section-title {
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.module-detail__lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--fg);
+  max-width: 68ch;
+}
+.module-detail__intro {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg-dim);
+  max-width: 76ch;
+}
+.module-detail__pill-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.module-detail__pill-list li {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--fg);
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-amber) 9%, var(--bg));
+}
+.concept-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.concept-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-elev) 74%, transparent);
+}
+.concept-card__topline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.concept-card__index {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--c-amber);
+  font-weight: 600;
+}
+.concept-card__title {
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--fg);
+}
+.concept-card__text {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg-dim);
+}
+.concept-card__usecase {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--c-rust);
+  background: color-mix(in srgb, var(--c-rust) 8%, transparent);
+}
+.concept-card__usecase span {
+  display: block;
+  margin-bottom: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--c-rust);
+}
+.concept-card__usecase p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-dim);
+}
+.codeblock {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, #050505 86%, var(--bg));
+}
+.codeblock__label {
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.codeblock pre {
+  overflow-x: auto;
+  padding: 16px;
+}
+.codeblock code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #f4eee7;
+  white-space: pre;
+}
+.module-detail__code-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.mistake-table {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.mistake-table__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  border-top: 1px solid var(--line);
+}
+.mistake-table__row:first-child {
+  border-top: none;
+}
+.mistake-table__row > div {
+  padding: 13px 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+.mistake-table__row > div + div {
+  border-left: 1px solid var(--line);
+}
+.mistake-table__head {
+  background: var(--bg-elev);
+}
+.mistake-table__head > div {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.module-detail__checklist {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.module-detail__checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elev);
+  color: var(--fg-dim);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.module-detail__check {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--bg);
+  background: var(--c-rust);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* end state */
 .phase__endstate {
   margin-top: 36px; padding: 28px 32px;
@@ -1241,6 +1476,28 @@ body::before {
   .phase__summary { font-size: 16px; }
   .phase__weeks-block { margin-top: 22px; padding: 18px; }
   .phase__weeks { font-size: 30px; }
+  .module-detail__header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .module-detail__badges {
+    justify-content: flex-start;
+  }
+  .module-detail__code-grid,
+  .module-detail__checklist,
+  .mistake-table__row {
+    grid-template-columns: 1fr;
+  }
+  .mistake-table__row > div + div {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+  .mistake-table__head > div + div {
+    border-top: none;
+  }
+  .concept-card {
+    padding: 18px;
+  }
   .capstone {
     grid-template-columns: 1fr;
     gap: 24px;

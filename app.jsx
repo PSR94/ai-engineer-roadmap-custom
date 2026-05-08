@@ -1,5 +1,124 @@
 const { useState, useEffect, useRef } = React;
 
+function CodeBlock({ code, label }) {
+  if (!code) return null;
+  return (
+    <div className="codeblock">
+      {label ? <div className="codeblock__label">{label}</div> : null}
+      <pre><code>{code}</code></pre>
+    </div>
+  );
+}
+
+function DetailSection({ eyebrow, title, children }) {
+  return (
+    <section className="module-detail__section">
+      {eyebrow ? <div className="module-detail__eyebrow">{eyebrow}</div> : null}
+      <h4 className="module-detail__section-title">{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function ConceptCard({ concept, index }) {
+  return (
+    <article className="concept-card">
+      <div className="concept-card__topline">
+        <span className="concept-card__index">{String(index + 1).padStart(2, '0')}</span>
+        <h5 className="concept-card__title">{concept.title}</h5>
+      </div>
+      <p className="concept-card__text">{concept.explanation}</p>
+      <div className="concept-card__usecase">
+        <span>AI use case</span>
+        <p>{concept.aiUseCase}</p>
+      </div>
+      <CodeBlock code={concept.code} />
+    </article>
+  );
+}
+
+function Checklist({ items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <ul className="module-detail__checklist">
+      {items.map((item, i) => (
+        <li key={i}>
+          <span className="module-detail__check" aria-hidden="true">✓</span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ModuleDetail({ section }) {
+  const detail = section.detail;
+  return (
+    <article className="module-detail">
+      <header className="module-detail__header">
+        <div>
+          <div className="tabbox__panel-num">Module {section.n}</div>
+          <h3 className="tabbox__panel-title module-detail__title">{section.title}</h3>
+        </div>
+        <div className="module-detail__badges" aria-label="Module metadata">
+          <span>{detail.duration}</span>
+          <span>{detail.level}</span>
+          <span className="module-detail__badge-required">{detail.status}</span>
+        </div>
+      </header>
+
+      <DetailSection title="Goal">
+        <p className="module-detail__lead">{detail.goal}</p>
+      </DetailSection>
+
+      <DetailSection title="Why This Matters For AI Engineering">
+        <p className="module-detail__intro">
+          Python is the default glue language for modern AI systems. You will use these basics when you are:
+        </p>
+        <ul className="module-detail__pill-list">
+          {detail.whyItMatters.map((item, i) => <li key={i}>{item}</li>)}
+        </ul>
+      </DetailSection>
+
+      <DetailSection eyebrow="Concepts" title="Core Python Concepts">
+        <div className="concept-grid">
+          {detail.concepts.map((concept, i) => (
+            <ConceptCard key={concept.title} concept={concept} index={i} />
+          ))}
+        </div>
+      </DetailSection>
+
+      <DetailSection eyebrow="Mini Practice Task" title={detail.miniProject.title}>
+        <p className="module-detail__intro">{detail.miniProject.description}</p>
+        <div className="module-detail__code-grid">
+          <CodeBlock label="Input" code={detail.miniProject.inputCode} />
+          <CodeBlock label="Expected output shape" code={detail.miniProject.expectedOutputCode} />
+        </div>
+        <CodeBlock label="Starter code" code={detail.miniProject.starterCode} />
+      </DetailSection>
+
+      <DetailSection title="Common Mistakes">
+        <div className="mistake-table" role="table" aria-label="Common mistakes and better approaches">
+          <div className="mistake-table__row mistake-table__head" role="row">
+            <div role="columnheader">Mistake</div>
+            <div role="columnheader">Better approach</div>
+          </div>
+          {detail.commonMistakes.map((row, i) => (
+            <div className="mistake-table__row" role="row" key={i}>
+              <div role="cell">{row.mistake}</div>
+              <div role="cell">{row.better}</div>
+            </div>
+          ))}
+        </div>
+      </DetailSection>
+
+      <DetailSection title="Completion Checklist">
+        <Checklist items={detail.checklist} />
+      </DetailSection>
+    </article>
+  );
+}
+
 function PhaseTabBox({ phase }) {
   const [activeTab, setActiveTab] = useState(0);
   const section = phase.sections[activeTab];
@@ -17,16 +136,22 @@ function PhaseTabBox({ phase }) {
       </div>
       <div className="tabbox__panel" role="tabpanel">
         <div className="tabbox__panel-content" key={activeTab}>
-          <div className="tabbox__panel-num">Module {section.n}</div>
-          <h3 className="tabbox__panel-title">{section.title}</h3>
-          <ul className="tabbox__items">
-            {section.items.map((item, ii) => (
-              <li key={ii} className="tabbox__item">
-                <span className="tabbox__item-marker">{String(ii + 1).padStart(2, '0')}</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+          {section.detail ? (
+            <ModuleDetail section={section} />
+          ) : (
+            <React.Fragment>
+              <div className="tabbox__panel-num">Module {section.n}</div>
+              <h3 className="tabbox__panel-title">{section.title}</h3>
+              <ul className="tabbox__items">
+                {section.items.map((item, ii) => (
+                  <li key={ii} className="tabbox__item">
+                    <span className="tabbox__item-marker">{String(ii + 1).padStart(2, '0')}</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </React.Fragment>
+          )}
         </div>
       </div>
     </div>

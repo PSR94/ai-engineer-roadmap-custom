@@ -12,7 +12,194 @@ window.ROADMAP = [
     summary: "Every agent framework runs on Python. Skip this and everything later breaks in mysterious ways.",
     endState: "You can build a FastAPI endpoint that calls three different LLMs in parallel, times out the slow one, and logs the result without blocking the response.",
     sections: [
-      { n: "1.1", title: "Core Python", items: ["Variables, types, control flow", "Functions, *args/**kwargs, decorators", "List & dict comprehensions", "Generator expressions", "Type hints (you'll need these for Pydantic later)"] },
+      {
+        n: "1.1",
+        title: "Core Python",
+        items: ["Variables, types, control flow", "Functions, *args/**kwargs, decorators", "List & dict comprehensions", "Generator expressions", "Type hints (you'll need these for Pydantic later)"],
+        detail: {
+          duration: "45–90 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "By the end of this module, you should understand the Python basics needed to read, write, and debug simple AI engineering code.",
+          whyItMatters: [
+            "Calling LLM APIs",
+            "Cleaning prompts and user input",
+            "Processing documents",
+            "Building RAG pipelines",
+            "Creating FastAPI endpoints",
+            "Building agents and tools",
+            "Debugging production AI apps"
+          ],
+          concepts: [
+            {
+              title: "Variables, types, and control flow",
+              explanation: "A variable is a name that points to a value so you can reuse it later. Python values have types such as str, int, float, bool, list, dict, and None. Control flow with if / elif / else lets your code choose what to do based on the current data.",
+              aiUseCase: "Check whether a user question is empty, whether a confidence score is too low, or whether the app should ask a follow-up question instead of calling the model.",
+              code: `question = "What is RAG?"
+confidence = 0.42
+
+if not question.strip():
+    response = "Please enter a question."
+elif confidence < 0.5:
+    response = "I need more context before answering."
+else:
+    response = "Calling the LLM now..."`
+            },
+            {
+              title: "Functions",
+              explanation: "Functions are reusable blocks of code. They can accept parameters, do one clear job, and return a value. Good AI engineering code is built from small functions you can test independently.",
+              aiUseCase: "Use functions such as clean_input(), build_prompt(), and should_use_rag() to keep an AI endpoint readable and easy to debug.",
+              code: `def clean_input(text: str) -> str:
+    return text.strip()
+
+def should_use_rag(question: str) -> bool:
+    keywords = ["policy", "document", "source", "citation"]
+    return any(word in question.lower() for word in keywords)
+
+question = clean_input("  Summarize this policy document ")
+use_rag = should_use_rag(question)`
+            },
+            {
+              title: "*args and **kwargs",
+              explanation: "*args lets a function accept a flexible number of positional values. **kwargs lets it accept flexible named settings. You do not need these everywhere, but they help when a wrapper needs to pass optional configuration through cleanly.",
+              aiUseCase: "Pass optional model settings such as model, temperature, max_tokens, and timeout without writing a separate parameter for every possible provider option.",
+              code: `def call_model(prompt: str, **settings) -> dict:
+    return {
+        "prompt": prompt,
+        "model": settings.get("model", "gpt-4.1-mini"),
+        "temperature": settings.get("temperature", 0.2),
+        "max_tokens": settings.get("max_tokens", 500),
+    }
+
+result = call_model(
+    "Explain MCP in one paragraph",
+    model="gpt-4.1",
+    temperature=0.1,
+    timeout=30,
+)`
+            },
+            {
+              title: "Decorators",
+              explanation: "A decorator wraps a function and adds behavior around it. Beginner version: it is a clean way to say “run this extra logic whenever this function is used” without rewriting the function body.",
+              aiUseCase: "FastAPI uses decorators to turn Python functions into web routes. Agent frameworks often use decorators to register functions as tools the model can call.",
+              code: `from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/chat")
+def chat(message: str) -> dict:
+    return {"reply": f"You said: {message}"}
+
+# Agent frameworks use a similar idea:
+# @tool
+# def search_docs(query: str) -> list[dict]: ...`
+            },
+            {
+              title: "List and dict comprehensions",
+              explanation: "Comprehensions are concise ways to transform lists and dictionaries. They are useful when the transformation is simple. If the logic becomes hard to read, use a normal for loop.",
+              aiUseCase: "Clean prompt lists, filter invalid documents, or transform retrieved chunks before sending them to an LLM.",
+              code: `raw_prompts = ["  Explain RAG  ", "", "What is MCP?"]
+clean_prompts = [p.strip() for p in raw_prompts if p.strip()]
+
+chunks = [
+    {"text": " RAG retrieves context. ", "score": 0.91},
+    {"text": "Unrelated note", "score": 0.32},
+]
+
+context = [
+    chunk["text"].strip()
+    for chunk in chunks
+    if chunk["score"] >= 0.8
+]`
+            },
+            {
+              title: "Generator expressions",
+              explanation: "Generators produce values lazily, one at a time, instead of building the whole result in memory. This matters when the input is large.",
+              aiUseCase: "Process large files, logs, or document chunks without loading everything into memory at once.",
+              code: `def valid_lines(lines: list[str]):
+    return (line.strip() for line in lines if line.strip())
+
+log_lines = [" request started ", "", " model timeout ", " retrying "]
+
+for line in valid_lines(log_lines):
+    print(line)`
+            },
+            {
+              title: "Type hints",
+              explanation: "Type hints document the input and output types a function expects. Python does not enforce them at runtime by default, but editors, tests, FastAPI, and Pydantic can use them to catch mistakes earlier.",
+              aiUseCase: "FastAPI endpoints, Pydantic models, tool schemas, and structured outputs all become easier to understand and validate when types are explicit.",
+              code: `def build_prompt(question: str, context_chunks: list[str]) -> str:
+    context = "\\n".join(context_chunks)
+    return f"Use this context:\\n{context}\\n\\nQuestion: {question}"
+
+def parse_score(raw_score: float | None) -> float:
+    if raw_score is None:
+        return 0.0
+    return raw_score`
+            }
+          ],
+          miniProject: {
+            title: "Build: Prompt Cleaner",
+            description: "Create a Python script that takes messy user prompts and converts them into clean structured data.",
+            inputCode: `raw_prompts = [
+    "   Explain RAG in simple terms   ",
+    "",
+    "What is MCP?",
+    "   summarize vector databases "
+]`,
+            expectedOutputCode: `[
+    {
+        "id": 1,
+        "prompt": "Explain RAG in simple terms",
+        "word_count": 6,
+        "is_valid": true
+    },
+    ...
+]`,
+            starterCode: `def clean_prompt(prompt: str) -> str:
+    # Remove leading/trailing whitespace.
+    return prompt.strip()
+
+def count_words(prompt: str) -> int:
+    # Count words after cleaning.
+    return len(clean_prompt(prompt).split())
+
+def is_valid_prompt(prompt: str) -> bool:
+    # Empty prompts should not be sent to an LLM.
+    return bool(clean_prompt(prompt))
+
+def process_prompts(raw_prompts: list[str]) -> list[dict]:
+    processed = []
+
+    for index, raw_prompt in enumerate(raw_prompts, start=1):
+        prompt = clean_prompt(raw_prompt)
+        processed.append({
+            "id": index,
+            "prompt": prompt,
+            "word_count": count_words(prompt),
+            "is_valid": is_valid_prompt(prompt),
+        })
+
+    return processed`
+          },
+          commonMistakes: [
+            { mistake: "Writing everything in one function", better: "Break logic into small reusable functions" },
+            { mistake: "Using unclear variable names", better: "Use names that describe the data, such as raw_prompt or cleaned_prompt" },
+            { mistake: "Ignoring empty input", better: "Check blank strings before calling an LLM or retrieval system" },
+            { mistake: "Overusing clever comprehensions", better: "Use normal loops when the logic needs multiple steps" },
+            { mistake: "Skipping type hints", better: "Add simple hints for function inputs and return values" },
+            { mistake: "Not testing helper functions separately", better: "Test clean_prompt(), count_words(), and is_valid_prompt() before the full pipeline" }
+          ],
+          checklist: [
+            "Explain variables and basic types",
+            "Write small reusable functions",
+            "Use simple type hints",
+            "Use comprehensions for data cleanup",
+            "Understand decorators conceptually",
+            "Build the Prompt Cleaner mini task"
+          ]
+        }
+      },
       { n: "1.2", title: "Object-Oriented Python", items: ["Classes, __init__, instance vs class methods", "Inheritance, encapsulation, polymorphism", "Dataclasses", "Pydantic models — every agent framework uses them for tool schemas"] },
       { n: "1.3", title: "Data Structures", items: ["List, Tuple, Set, Dict, NamedTuple", "collections.defaultdict, Counter, deque", "When to use which (interview territory)"] },
       { n: "1.4", title: "Error & File Handling", items: ["try/except/finally", "Custom exception classes", "Context managers (with, contextlib)", "Reading/writing JSON, CSV, plain text, binary"] },

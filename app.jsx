@@ -10,6 +10,19 @@ function CodeBlock({ code, label }) {
   );
 }
 
+function PythonCodeReveal({ code }) {
+  const [open, setOpen] = useState(false);
+  if (!code) return null;
+  return (
+    <details className="code-reveal" onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary className="code-reveal__summary">
+        <span>{open ? 'Hide Python code' : 'Show Python code'}</span>
+      </summary>
+      <CodeBlock label="Python example" code={code} />
+    </details>
+  );
+}
+
 function DetailSection({ eyebrow, title, children }) {
   return (
     <section className="module-detail__section">
@@ -34,7 +47,13 @@ function ConceptCard({ concept, index }) {
           <span>AI use case</span>
           <p>{concept.aiUseCase}</p>
         </div>
-        <CodeBlock code={concept.code} />
+        {concept.plainExample ? (
+          <div className="concept-card__plain">
+            <span>Plain-English example</span>
+            <p>{concept.plainExample}</p>
+          </div>
+        ) : null}
+        <PythonCodeReveal code={concept.code} />
       </div>
     </details>
   );
@@ -91,14 +110,16 @@ function ModuleDetail({ section }) {
         </div>
       </DetailSection>
 
-      <DetailSection eyebrow="Mini Practice Task" title={detail.miniProject.title}>
-        <p className="module-detail__intro">{detail.miniProject.description}</p>
-        <div className="module-detail__code-grid">
-          <CodeBlock label="Input" code={detail.miniProject.inputCode} />
-          <CodeBlock label="Expected output shape" code={detail.miniProject.expectedOutputCode} />
-        </div>
-        <CodeBlock label="Starter code" code={detail.miniProject.starterCode} />
-      </DetailSection>
+      {detail.miniProject ? (
+        <DetailSection eyebrow="Mini Practice Task" title={detail.miniProject.title}>
+          <p className="module-detail__intro">{detail.miniProject.description}</p>
+          <div className="module-detail__code-grid">
+            <CodeBlock label="Input" code={detail.miniProject.inputCode} />
+            <CodeBlock label="Expected output shape" code={detail.miniProject.expectedOutputCode} />
+          </div>
+          <CodeBlock label="Starter code" code={detail.miniProject.starterCode} />
+        </DetailSection>
+      ) : null}
 
       <DetailSection title="Common Mistakes">
         <div className="mistake-table" role="table" aria-label="Common mistakes and better approaches">

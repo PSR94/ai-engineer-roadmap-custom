@@ -35,6 +35,7 @@ window.ROADMAP = [
               title: "Variables, types, and control flow",
               explanation: "A variable is a name that points to a value so you can reuse it later. Python values have types such as str, int, float, bool, list, dict, and None. Control flow with if / elif / else lets your code choose what to do based on the current data.",
               aiUseCase: "Check whether a user question is empty, whether a confidence score is too low, or whether the app should ask a follow-up question instead of calling the model.",
+              plainExample: "Think of a support bot that receives a blank question. It should not waste money calling an LLM. It should first check: is the question empty? Is confidence low? If yes, ask for more information.",
               code: `question = "What is RAG?"
 confidence = 0.42
 
@@ -49,6 +50,7 @@ else:
               title: "Functions",
               explanation: "Functions are reusable blocks of code. They can accept parameters, do one clear job, and return a value. Good AI engineering code is built from small functions you can test independently.",
               aiUseCase: "Use functions such as clean_input(), build_prompt(), and should_use_rag() to keep an AI endpoint readable and easy to debug.",
+              plainExample: "Instead of writing all logic inside one chat endpoint, split it into small jobs: one function cleans the input, one builds the prompt, and one decides whether retrieval is needed.",
               code: `def clean_input(text: str) -> str:
     return text.strip()
 
@@ -63,6 +65,7 @@ use_rag = should_use_rag(question)`
               title: "*args and **kwargs",
               explanation: "*args lets a function accept a flexible number of positional values. **kwargs lets it accept flexible named settings. You do not need these everywhere, but they help when a wrapper needs to pass optional configuration through cleanly.",
               aiUseCase: "Pass optional model settings such as model, temperature, max_tokens, and timeout without writing a separate parameter for every possible provider option.",
+              plainExample: "Imagine a helper that calls an LLM. Some calls need a low temperature, some need a different model, and some need a timeout. Flexible settings let you pass only the options needed for that call.",
               code: `def call_model(prompt: str, **settings) -> dict:
     return {
         "prompt": prompt,
@@ -82,6 +85,7 @@ result = call_model(
               title: "Decorators",
               explanation: "A decorator wraps a function and adds behavior around it. Beginner version: it is a clean way to say “run this extra logic whenever this function is used” without rewriting the function body.",
               aiUseCase: "FastAPI uses decorators to turn Python functions into web routes. Agent frameworks often use decorators to register functions as tools the model can call.",
+              plainExample: "A decorator is like putting a label on a function. In FastAPI, the label says: this function should run when someone sends a request to /chat. In agent tools, the label says: the model is allowed to call this function.",
               code: `from fastapi import FastAPI
 
 app = FastAPI()
@@ -98,6 +102,7 @@ def chat(message: str) -> dict:
               title: "List and dict comprehensions",
               explanation: "Comprehensions are concise ways to transform lists and dictionaries. They are useful when the transformation is simple. If the logic becomes hard to read, use a normal for loop.",
               aiUseCase: "Clean prompt lists, filter invalid documents, or transform retrieved chunks before sending them to an LLM.",
+              plainExample: "If you retrieve ten document chunks but only six are relevant enough, a comprehension can create a clean list containing only the useful chunks.",
               code: `raw_prompts = ["  Explain RAG  ", "", "What is MCP?"]
 clean_prompts = [p.strip() for p in raw_prompts if p.strip()]
 
@@ -116,6 +121,7 @@ context = [
               title: "Generator expressions",
               explanation: "Generators produce values lazily, one at a time, instead of building the whole result in memory. This matters when the input is large.",
               aiUseCase: "Process large files, logs, or document chunks without loading everything into memory at once.",
+              plainExample: "If an ingestion job reads a very large log file, it can handle one line at a time instead of loading the whole file into memory first.",
               code: `def valid_lines(lines: list[str]):
     return (line.strip() for line in lines if line.strip())
 
@@ -128,6 +134,7 @@ for line in valid_lines(log_lines):
               title: "Type hints",
               explanation: "Type hints document the input and output types a function expects. Python does not enforce them at runtime by default, but editors, tests, FastAPI, and Pydantic can use them to catch mistakes earlier.",
               aiUseCase: "FastAPI endpoints, Pydantic models, tool schemas, and structured outputs all become easier to understand and validate when types are explicit.",
+              plainExample: "If a tool expects a question as text and context as a list of text chunks, type hints make that contract visible before the code runs.",
               code: `def build_prompt(question: str, context_chunks: list[str]) -> str:
     context = "\\n".join(context_chunks)
     return f"Use this context:\\n{context}\\n\\nQuestion: {question}"
@@ -138,50 +145,6 @@ def parse_score(raw_score: float | None) -> float:
     return raw_score`
             }
           ],
-          miniProject: {
-            title: "Build: Prompt Cleaner",
-            description: "Create a Python script that takes messy user prompts and converts them into clean structured data.",
-            inputCode: `raw_prompts = [
-    "   Explain RAG in simple terms   ",
-    "",
-    "What is MCP?",
-    "   summarize vector databases "
-]`,
-            expectedOutputCode: `[
-    {
-        "id": 1,
-        "prompt": "Explain RAG in simple terms",
-        "word_count": 6,
-        "is_valid": true
-    },
-    ...
-]`,
-            starterCode: `def clean_prompt(prompt: str) -> str:
-    # Remove leading/trailing whitespace.
-    return prompt.strip()
-
-def count_words(prompt: str) -> int:
-    # Count words after cleaning.
-    return len(clean_prompt(prompt).split())
-
-def is_valid_prompt(prompt: str) -> bool:
-    # Empty prompts should not be sent to an LLM.
-    return bool(clean_prompt(prompt))
-
-def process_prompts(raw_prompts: list[str]) -> list[dict]:
-    processed = []
-
-    for index, raw_prompt in enumerate(raw_prompts, start=1):
-        prompt = clean_prompt(raw_prompt)
-        processed.append({
-            "id": index,
-            "prompt": prompt,
-            "word_count": count_words(prompt),
-            "is_valid": is_valid_prompt(prompt),
-        })
-
-    return processed`
-          },
           commonMistakes: [
             { mistake: "Writing everything in one function", better: "Break logic into small reusable functions" },
             { mistake: "Using unclear variable names", better: "Use names that describe the data, such as raw_prompt or cleaned_prompt" },
@@ -195,8 +158,7 @@ def process_prompts(raw_prompts: list[str]) -> list[dict]:
             "Write small reusable functions",
             "Use simple type hints",
             "Use comprehensions for data cleanup",
-            "Understand decorators conceptually",
-            "Build the Prompt Cleaner mini task"
+            "Understand decorators conceptually"
           ]
         }
       },

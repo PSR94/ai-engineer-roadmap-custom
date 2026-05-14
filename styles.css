@@ -242,6 +242,11 @@ body::before {
   opacity: 0; transform: translateY(28px);
   animation: rise 1.1s var(--ease-out) 0.2s forwards;
 }
+.hero__title-main {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
 .hero__title em {
   font-style: italic;
   font-family: 'Instrument Serif', serif;

@@ -1479,16 +1479,490 @@ assert build_context(["chunk one"]) == expected`
     summary: "The longest phase. RAG looks simple in tutorials and is brutal in production.",
     endState: "You can build a RAG system, measure why it's wrong, and fix it with data instead of vibes.",
     sections: [
-      { n: "4.1", title: "Why RAG exists", items: ["LLMs can't see your private data", "The brain-in-a-windowless-room reaches its limit", "Use cases: internal docs, company policies, recent data"] },
-      { n: "4.2", title: "Embeddings", items: ["What an embedding actually is (vector in N-dim space)", "Cosine similarity, dot product, Euclidean distance", "Embedding models — Titan Multimodal, SentenceTransformer, OpenAI ada/text-embedding-3, Cohere", "Choosing dimensions vs cost"] },
-      { n: "4.3", title: "Document ingestion pipeline", items: ["Layout identification with Docling (headers, paragraphs, tables, code blocks, formulas)", "Serialization to structured objects", "Why PyMuPDF alone fails on complex PDFs"] },
-      { n: "4.4", title: "Chunking strategies", items: ["Fixed-width chunking and why it breaks", "Semantic chunking by structure", "Overlap windows", "Parent-child chunking", "Late chunking — embed first, chunk later — preserves context across boundaries", "Chunk size vs retrieval quality tradeoff"] },
-      { n: "4.5", title: "Chunk enrichment", items: ["PII detection and redaction", "NER for entities", "Key-phrase extraction", "Metadata for hybrid search"] },
-      { n: "4.6", title: "Vector databases", items: ["Pinecone, Weaviate, pgvector", "Chroma for local dev", "S3 Vector Buckets, OpenSearch", "HNSW vs IVF indexes", "Decision matrix: managed (Pinecone) vs self-hosted (Weaviate, Qdrant) vs in-process (Chroma, FAISS) vs already-in-your-stack (pgvector)"] },
-      { n: "4.7", title: "Hybrid retrieval & next-gen retrievers", items: ["Vector search + BM25 keyword", "Reranking with cross-encoders (Cohere Rerank, BGE)", "Metadata filtering", "Query expansion", "Late-interaction retrievers — ColBERT (text), ColPali (multimodal/PDF pages as images) — when they beat dense retrieval and what they cost"] },
-      { n: "4.8", title: "Graph-augmented RAG", items: ["Neo4j basics", "Cypher query language", "When graph relationships beat pure vector search", "Multi-hop queries"] },
-      { n: "4.9", title: "RAG evaluation — the part most courses skip", items: ["LLM-as-judge: RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Deterministic retrieval metrics: Precision@k, Recall@k, F1, Hit Rate@k, MRR, NDCG@k", "Tooling: Ragas (the de-facto eval framework), MLflow for run logging, LangSmith for tracing", "Golden datasets: Q&A pairs with expected chunks, regression testing on every code change"] },
-      { n: "4.10", title: "Data engineering basics for AI systems", items: ["ETL vs ELT — ingest, clean, normalize, enrich, load", "Batch jobs and worker queues for document processing", "SQL joins, indexes, migrations, and query plans", "Object storage layouts: raw / processed / embeddings / eval artifacts", "Idempotency and retry-safe jobs so reprocessing does not duplicate data"] }
+      {
+        n: "4.1",
+        title: "Why RAG exists",
+        items: ["LLMs can't see your private data", "The brain-in-a-windowless-room reaches its limit", "Use cases: internal docs, company policies, recent data"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand when Retrieval-Augmented Generation is needed and what problem it actually solves.",
+          whyIntro: "RAG is the default pattern for private or changing knowledge. You will use it when you are:",
+          conceptsTitle: "RAG Foundations",
+          whyItMatters: ["Answering from private docs", "Reducing hallucinations", "Citing sources", "Keeping answers current"],
+          concepts: [
+            {
+              title: "LLMs cannot see private data",
+              explanation: "A model only sees the prompt, its training, and any tools or context you provide.",
+              aiUseCase: "Retrieve company docs, tickets, policies, or database records before asking the model to answer.",
+              plainExample: "The model cannot know your internal PTO policy unless you put that policy in context."
+            },
+            {
+              title: "Retrieval before generation",
+              explanation: "RAG first finds relevant context, then asks the model to answer using that context.",
+              aiUseCase: "Use retrieval for support bots, knowledge bases, policy assistants, and document Q&A.",
+              plainExample: "Search the handbook first, then generate the answer with citations."
+            },
+            {
+              title: "Grounding and citations",
+              explanation: "Grounding means tying answers to retrieved evidence instead of model memory.",
+              aiUseCase: "Show users source chunks, page numbers, or document links so answers can be checked.",
+              plainExample: "A legal assistant should point to the clause it used."
+            },
+            {
+              title: "When RAG is not enough",
+              explanation: "Bad documents, poor chunking, weak retrieval, or missing permissions still produce bad answers.",
+              aiUseCase: "Debug the full pipeline, not only the final prompt.",
+              plainExample: "If retrieval returns the wrong page, the model will answer from the wrong evidence."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using RAG for facts already in the prompt", better: "Keep simple prompts simple" },
+            { mistake: "Blaming the model for bad retrieval", better: "Inspect retrieved chunks first" },
+            { mistake: "No citations", better: "Return source metadata with every grounded answer" }
+          ],
+          checklist: ["Explain why RAG exists", "Describe retrieve-then-generate", "Know when citations matter", "Inspect retrieved context before debugging prompts"]
+        }
+      },
+      {
+        n: "4.2",
+        title: "Embeddings",
+        items: ["What an embedding actually is (vector in N-dim space)", "Cosine similarity, dot product, Euclidean distance", "Embedding models — Titan Multimodal, SentenceTransformer, OpenAI ada/text-embedding-3, Cohere", "Choosing dimensions vs cost"],
+        detail: {
+          duration: "60–75 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show embedding example",
+          hideCodeLabel: "Hide embedding example",
+          codeLabel: "Embedding example",
+          goal: "Understand embeddings as searchable meaning vectors and choose them with cost and quality in mind.",
+          whyIntro: "Embeddings power most semantic search systems. You will use them when you are:",
+          conceptsTitle: "Embedding Concepts",
+          whyItMatters: ["Semantic search", "Document similarity", "Deduplication", "RAG retrieval"],
+          concepts: [
+            {
+              title: "Vectors for meaning",
+              explanation: "An embedding turns text into a list of numbers that roughly represents meaning.",
+              aiUseCase: "Store document chunks as vectors, then find chunks close to a user question.",
+              plainExample: "Two refund-policy paragraphs should be closer to each other than to a recipe.",
+              code: `question = embed(\"How do refunds work?\")\nchunk = embed(\"Customers can request a refund within 30 days.\")\nscore = cosine_similarity(question, chunk)`
+            },
+            {
+              title: "Similarity metrics",
+              explanation: "Cosine similarity, dot product, and Euclidean distance compare vectors in different ways.",
+              aiUseCase: "Use the metric expected by your embedding model and vector database.",
+              plainExample: "Higher similarity usually means the chunk is more relevant to the query."
+            },
+            {
+              title: "Model choice",
+              explanation: "Embedding models differ in language coverage, dimensions, cost, speed, and multimodal support.",
+              aiUseCase: "Pick based on documents, query language, budget, and retrieval quality.",
+              plainExample: "A PDF-image workflow may need multimodal embeddings, not just text embeddings."
+            },
+            {
+              title: "Dimensions and storage",
+              explanation: "Higher-dimensional vectors can improve quality but increase storage, memory, and search cost.",
+              aiUseCase: "Balance retrieval quality against database cost and latency.",
+              plainExample: "Millions of large vectors can become expensive fast."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Assuming bigger embeddings always win", better: "Evaluate quality, cost, and latency together" },
+            { mistake: "Mixing embedding models in one index", better: "Re-embed consistently when changing models" },
+            { mistake: "Ignoring query/document mismatch", better: "Test retrieval with real user questions" }
+          ],
+          checklist: ["Explain embeddings", "Compare similarity metrics", "Choose an embedding model", "Understand dimension tradeoffs"]
+        }
+      },
+      {
+        n: "4.3",
+        title: "Document ingestion pipeline",
+        items: ["Layout identification with Docling (headers, paragraphs, tables, code blocks, formulas)", "Serialization to structured objects", "Why PyMuPDF alone fails on complex PDFs"],
+        detail: {
+          duration: "60–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Turn messy documents into structured, searchable records before chunking and embedding.",
+          whyIntro: "RAG quality starts before embeddings. You will use ingestion when you are:",
+          conceptsTitle: "Ingestion Pipeline",
+          whyItMatters: ["Parsing PDFs", "Preserving tables", "Keeping page metadata", "Preparing reliable chunks"],
+          concepts: [
+            {
+              title: "Layout identification",
+              explanation: "Good ingestion detects headings, paragraphs, tables, lists, code blocks, images, and page structure.",
+              aiUseCase: "Use tools like Docling when document layout matters for answer quality.",
+              plainExample: "A table row should stay connected to its header, not become random text."
+            },
+            {
+              title: "Structured serialization",
+              explanation: "After parsing, convert document parts into objects with text, type, page, section, and source metadata.",
+              aiUseCase: "Store structured records so retrieval can filter and cite correctly.",
+              plainExample: "A chunk should know it came from page 12, section 'Benefits'."
+            },
+            {
+              title: "PDF extraction limits",
+              explanation: "Simple PDF text extraction often loses reading order, tables, columns, and formatting.",
+              aiUseCase: "Inspect extraction output before trusting retrieval results.",
+              plainExample: "A two-column policy can be read in the wrong order if parsed naively."
+            },
+            {
+              title: "Metadata from day one",
+              explanation: "Capture document ID, version, page, section, timestamps, permissions, and checksum during ingestion.",
+              aiUseCase: "Use metadata for filtering, citations, updates, and access control.",
+              plainExample: "Without document version, you may answer from an old policy."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Embedding raw PDF text blindly", better: "Inspect layout and extraction quality first" },
+            { mistake: "Dropping page numbers", better: "Keep source metadata for citations" },
+            { mistake: "No document versioning", better: "Track source version and reprocessing status" }
+          ],
+          checklist: ["Parse document layout", "Serialize structured records", "Preserve metadata", "Inspect extraction quality"]
+        }
+      },
+      {
+        n: "4.4",
+        title: "Chunking strategies",
+        items: ["Fixed-width chunking and why it breaks", "Semantic chunking by structure", "Overlap windows", "Parent-child chunking", "Late chunking — embed first, chunk later — preserves context across boundaries", "Chunk size vs retrieval quality tradeoff"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show chunking example",
+          hideCodeLabel: "Hide chunking example",
+          codeLabel: "Chunking example",
+          goal: "Choose chunking strategies that preserve meaning and improve retrieval quality.",
+          whyIntro: "Chunking decides what evidence the model can see. You will use it when you are:",
+          conceptsTitle: "Chunking Strategies",
+          whyItMatters: ["Improving retrieval", "Reducing hallucinations", "Handling long docs", "Preserving context"],
+          concepts: [
+            {
+              title: "Fixed-width chunking",
+              explanation: "Fixed-width chunks split text by character or token count. It is simple but can cut through ideas.",
+              aiUseCase: "Use as a baseline, then improve when retrieval misses context.",
+              plainExample: "A refund rule split across two chunks can make both chunks incomplete."
+            },
+            {
+              title: "Semantic chunking",
+              explanation: "Semantic chunking follows document structure such as headings, paragraphs, lists, and sections.",
+              aiUseCase: "Use for policies, docs, manuals, and guides where structure matters.",
+              plainExample: "Keep all bullets under 'Eligibility' together when possible.",
+              code: `chunk = {\n    \"section\": \"Refund eligibility\",\n    \"text\": \"Customers may request a refund within 30 days...\",\n    \"page\": 4\n}`
+            },
+            {
+              title: "Overlap and parent-child",
+              explanation: "Overlap repeats nearby context. Parent-child stores small searchable chunks linked to larger parent sections.",
+              aiUseCase: "Search precise text, then send a larger parent section to the model.",
+              plainExample: "Find the matching sentence, but answer with the full policy paragraph."
+            },
+            {
+              title: "Chunk size tradeoff",
+              explanation: "Small chunks are precise but may lack context. Large chunks carry context but can reduce retrieval precision.",
+              aiUseCase: "Tune chunk size with retrieval evals instead of guessing.",
+              plainExample: "A 200-token chunk may be too narrow; a 2,000-token chunk may be noisy."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "One chunk size for every document type", better: "Tune by content type and eval results" },
+            { mistake: "No overlap where context spans boundaries", better: "Use overlap or parent-child retrieval" },
+            { mistake: "Ignoring headings", better: "Include section titles in chunk text or metadata" }
+          ],
+          checklist: ["Explain fixed-width limits", "Use semantic chunking", "Use overlap or parent-child retrieval", "Tune chunk size with evals"]
+        }
+      },
+      {
+        n: "4.5",
+        title: "Chunk enrichment",
+        items: ["PII detection and redaction", "NER for entities", "Key-phrase extraction", "Metadata for hybrid search"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Add metadata and safety processing that makes chunks easier to search, filter, and protect.",
+          whyIntro: "Raw chunks are rarely enough in production. You will enrich chunks when you are:",
+          conceptsTitle: "Chunk Enrichment",
+          whyItMatters: ["Protecting PII", "Filtering retrieval", "Improving hybrid search", "Supporting analytics"],
+          concepts: [
+            {
+              title: "PII redaction",
+              explanation: "Detect and remove or mask sensitive information before storage or model calls.",
+              aiUseCase: "Prevent private emails, phone numbers, account IDs, or health data from leaking into prompts.",
+              plainExample: "Store 'Email: [REDACTED]' instead of a real customer email."
+            },
+            {
+              title: "Named entities",
+              explanation: "NER identifies people, companies, products, locations, dates, and other entities.",
+              aiUseCase: "Attach entities as metadata so retrieval can filter or boost relevant chunks.",
+              plainExample: "A chunk tagged with 'AWS Bedrock' can rank higher for Bedrock questions."
+            },
+            {
+              title: "Key phrases",
+              explanation: "Key phrases summarize what a chunk is about in searchable terms.",
+              aiUseCase: "Improve keyword search and make retrieval debugging easier.",
+              plainExample: "A chunk can carry key phrases like 'refund window' and 'proof of purchase'."
+            },
+            {
+              title: "Metadata for hybrid search",
+              explanation: "Metadata such as document type, source, tenant, date, permissions, and section supports filtering and ranking.",
+              aiUseCase: "Search only documents a user is allowed to see.",
+              plainExample: "A sales user should not retrieve HR-only documents."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Storing sensitive raw text unnecessarily", better: "Redact or tokenize PII early" },
+            { mistake: "Metadata as an afterthought", better: "Design metadata fields before indexing" },
+            { mistake: "No permission filters", better: "Filter retrieval by tenant, role, and document ACLs" }
+          ],
+          checklist: ["Redact PII", "Extract entities", "Add key phrases", "Use metadata filters"]
+        }
+      },
+      {
+        n: "4.6",
+        title: "Vector databases",
+        items: ["Pinecone, Weaviate, pgvector", "Chroma for local dev", "S3 Vector Buckets, OpenSearch", "HNSW vs IVF indexes", "Decision matrix: managed (Pinecone) vs self-hosted (Weaviate, Qdrant) vs in-process (Chroma, FAISS) vs already-in-your-stack (pgvector)"],
+        detail: {
+          duration: "60–90 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show pgvector example",
+          hideCodeLabel: "Hide pgvector example",
+          codeLabel: "Vector query example",
+          goal: "Choose and operate a vector store based on scale, latency, team skill, and deployment constraints.",
+          whyIntro: "The vector database is where retrieval becomes infrastructure. You will use it when you are:",
+          conceptsTitle: "Vector Database Concepts",
+          whyItMatters: ["Storing embeddings", "Serving semantic search", "Filtering by metadata", "Scaling retrieval"],
+          concepts: [
+            {
+              title: "Vector store options",
+              explanation: "Pinecone, Weaviate, Qdrant, pgvector, Chroma, FAISS, OpenSearch, and cloud vector services fit different needs.",
+              aiUseCase: "Use Chroma or FAISS locally, pgvector when Postgres is enough, and managed stores when scale or ops matter.",
+              plainExample: "A prototype can use Chroma; a production multi-tenant app may need managed scaling."
+            },
+            {
+              title: "Indexes",
+              explanation: "Indexes like HNSW and IVF speed up approximate nearest-neighbor search.",
+              aiUseCase: "Tune index settings for recall, latency, memory, and ingestion speed.",
+              plainExample: "Faster search may miss some relevant chunks if recall is too low."
+            },
+            {
+              title: "Metadata filters",
+              explanation: "Most real searches combine vector similarity with metadata constraints.",
+              aiUseCase: "Filter by tenant, document type, product, language, timestamp, or permissions.",
+              plainExample: "Find similar chunks, but only inside the user's workspace.",
+              code: `SELECT text, source\nFROM chunks\nWHERE tenant_id = 'acme'\nORDER BY embedding <=> $1\nLIMIT 5;`
+            },
+            {
+              title: "Managed vs self-hosted",
+              explanation: "Managed stores reduce ops work. Self-hosting gives more control but adds maintenance.",
+              aiUseCase: "Choose based on compliance, scale, budget, and team capacity.",
+              plainExample: "If your team already runs Postgres well, pgvector may be enough."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Choosing a database by hype", better: "Choose by workload, scale, filters, and ops model" },
+            { mistake: "No metadata filtering", better: "Design filters before indexing" },
+            { mistake: "Ignoring reindexing cost", better: "Plan for embedding model changes and document updates" }
+          ],
+          checklist: ["Compare vector store options", "Explain HNSW/IVF tradeoffs", "Use metadata filters", "Choose managed vs self-hosted intentionally"]
+        }
+      },
+      {
+        n: "4.7",
+        title: "Hybrid retrieval & next-gen retrievers",
+        items: ["Vector search + BM25 keyword", "Reranking with cross-encoders (Cohere Rerank, BGE)", "Metadata filtering", "Query expansion", "Late-interaction retrievers — ColBERT (text), ColPali (multimodal/PDF pages as images) — when they beat dense retrieval and what they cost"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Improve retrieval by combining semantic search, keyword search, filters, reranking, and specialized retrievers.",
+          whyIntro: "Dense vectors alone miss exact terms and rare facts. You will use hybrid retrieval when you are:",
+          conceptsTitle: "Hybrid Retrieval",
+          whyItMatters: ["Improving recall", "Handling exact terms", "Reranking chunks", "Retrieving PDFs and tables"],
+          concepts: [
+            {
+              title: "Vector plus BM25",
+              explanation: "Hybrid search combines semantic similarity with keyword matching.",
+              aiUseCase: "Find conceptually related chunks while still respecting exact product names, IDs, and legal terms.",
+              plainExample: "A query for 'Form 1099-K' should match the exact form name, not only similar tax content."
+            },
+            {
+              title: "Reranking",
+              explanation: "A reranker scores candidate chunks more carefully after initial retrieval.",
+              aiUseCase: "Retrieve 30 candidates cheaply, rerank them, then send the best 5 to the model.",
+              plainExample: "Reranking is slower but often improves final context quality."
+            },
+            {
+              title: "Query expansion",
+              explanation: "Query expansion rewrites or adds related terms to improve recall.",
+              aiUseCase: "Expand user language into domain terms before retrieval.",
+              plainExample: "'Can I get my money back?' can expand to 'refund, reimbursement, return policy'."
+            },
+            {
+              title: "Late-interaction retrievers",
+              explanation: "Retrievers like ColBERT and ColPali keep richer token or visual interactions than a single dense vector.",
+              aiUseCase: "Use them for hard text retrieval, page-image PDFs, tables, and visual layouts when budget allows.",
+              plainExample: "A scanned PDF page may retrieve better as an image-aware representation."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only using top-3 vector search", better: "Test hybrid retrieval and reranking" },
+            { mistake: "No exact keyword support", better: "Add BM25 for codes, names, and rare terms" },
+            { mistake: "Reranking too many chunks", better: "Limit candidates and measure latency" }
+          ],
+          checklist: ["Combine vector and BM25", "Use reranking", "Apply metadata filters", "Know when late-interaction retrievers help"]
+        }
+      },
+      {
+        n: "4.8",
+        title: "Graph-augmented RAG",
+        items: ["Neo4j basics", "Cypher query language", "When graph relationships beat pure vector search", "Multi-hop queries"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show Cypher example",
+          hideCodeLabel: "Hide Cypher example",
+          codeLabel: "Cypher example",
+          goal: "Know when relationships and multi-hop queries need a graph instead of only vector search.",
+          whyIntro: "Graphs help when relationships are the answer. You will use graph RAG when you are:",
+          conceptsTitle: "Graph RAG Concepts",
+          whyItMatters: ["Multi-hop questions", "Entity relationships", "Compliance queries", "Knowledge graphs"],
+          concepts: [
+            {
+              title: "Graph basics",
+              explanation: "Graphs store entities as nodes and relationships as edges.",
+              aiUseCase: "Represent people, systems, documents, products, owners, dependencies, and policies.",
+              plainExample: "A system owns a database, the database stores PII, and a policy controls access."
+            },
+            {
+              title: "Cypher queries",
+              explanation: "Cypher is a query language for matching graph patterns.",
+              aiUseCase: "Find connected entities before sending evidence to the model.",
+              plainExample: "Find all services owned by a team that touch customer data.",
+              code: `MATCH (team:Team {name: \"Payments\"})-[:OWNS]->(svc)-[:USES]->(db)\nRETURN svc.name, db.name`
+            },
+            {
+              title: "When graphs beat vectors",
+              explanation: "Vectors are good for similarity. Graphs are better for explicit relationships and paths.",
+              aiUseCase: "Use graphs for dependency analysis, lineage, ownership, and multi-hop reasoning.",
+              plainExample: "Similarity search may not reveal that Service A depends on Database B through Queue C."
+            },
+            {
+              title: "Graph plus RAG",
+              explanation: "Graph RAG can retrieve entities and relationships, then attach relevant text chunks for grounding.",
+              aiUseCase: "Combine structured relationship queries with unstructured document evidence.",
+              plainExample: "Use the graph to find affected systems, then retrieve their runbooks."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using a graph for simple text Q&A", better: "Use graphs when relationships matter" },
+            { mistake: "No entity normalization", better: "Deduplicate entities before building edges" },
+            { mistake: "Sending graph facts without evidence", better: "Attach source documents or provenance" }
+          ],
+          checklist: ["Explain nodes and edges", "Read a simple Cypher query", "Know when graphs beat vectors", "Combine graph facts with text evidence"]
+        }
+      },
+      {
+        n: "4.9",
+        title: "RAG evaluation — the part most courses skip",
+        items: ["LLM-as-judge: RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Deterministic retrieval metrics: Precision@k, Recall@k, F1, Hit Rate@k, MRR, NDCG@k", "Tooling: Ragas (the de-facto eval framework), MLflow for run logging, LangSmith for tracing", "Golden datasets: Q&A pairs with expected chunks, regression testing on every code change"],
+        detail: {
+          duration: "90–120 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show eval example",
+          hideCodeLabel: "Hide eval example",
+          codeLabel: "Eval example",
+          goal: "Measure RAG failures with retrieval metrics, answer metrics, traces, and regression datasets.",
+          whyIntro: "Without evals, RAG debugging becomes guessing. You will use RAG evals when you are:",
+          conceptsTitle: "RAG Evaluation",
+          whyItMatters: ["Finding retrieval failures", "Preventing regressions", "Comparing chunking strategies", "Proving answer quality"],
+          concepts: [
+            {
+              title: "RAG Triad",
+              explanation: "Faithfulness checks whether the answer follows context. Context relevance checks whether retrieved chunks matter. Answer relevance checks whether the answer addresses the question.",
+              aiUseCase: "Separate retrieval problems from generation problems.",
+              plainExample: "A faithful answer can still be useless if retrieval brought irrelevant chunks."
+            },
+            {
+              title: "Retrieval metrics",
+              explanation: "Precision@k, Recall@k, Hit Rate, MRR, and NDCG measure whether the right chunks appear in search results.",
+              aiUseCase: "Compare chunking, embedding models, filters, and rerankers.",
+              plainExample: "If the gold chunk is never in top 10, prompt changes will not fix the system.",
+              code: `def hit_rate_at_k(results, expected_chunk_id, k):\n    top_ids = [r[\"chunk_id\"] for r in results[:k]]\n    return expected_chunk_id in top_ids`
+            },
+            {
+              title: "Golden datasets",
+              explanation: "A golden dataset contains representative questions, expected answers, and expected supporting chunks.",
+              aiUseCase: "Run it in CI before changing prompts, chunking, embeddings, or models.",
+              plainExample: "Keep 50 real policy questions that must keep passing after every retrieval change."
+            },
+            {
+              title: "Tracing and run logging",
+              explanation: "Tools like LangSmith, LangFuse, MLflow, and Ragas help record inputs, retrieved chunks, scores, outputs, and failures.",
+              aiUseCase: "Debug individual bad answers and compare experiments.",
+              plainExample: "A trace shows the query, retrieved chunks, reranker scores, model call, and final answer."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only judging final answers", better: "Evaluate retrieval and generation separately" },
+            { mistake: "No golden dataset", better: "Collect real representative questions" },
+            { mistake: "Changing chunking without regression tests", better: "Run evals before and after every pipeline change" }
+          ],
+          checklist: ["Explain the RAG Triad", "Use retrieval metrics", "Create a golden dataset", "Log traces and compare runs"]
+        }
+      },
+      {
+        n: "4.10",
+        title: "Data engineering basics for AI systems",
+        items: ["ETL vs ELT — ingest, clean, normalize, enrich, load", "Batch jobs and worker queues for document processing", "SQL joins, indexes, migrations, and query plans", "Object storage layouts: raw / processed / embeddings / eval artifacts", "Idempotency and retry-safe jobs so reprocessing does not duplicate data"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show pipeline example",
+          hideCodeLabel: "Hide pipeline example",
+          codeLabel: "Pipeline example",
+          goal: "Build ingestion and processing flows that can be rerun safely without corrupting data.",
+          whyIntro: "AI systems are data systems with model calls attached. You will use these basics when you are:",
+          conceptsTitle: "Data Engineering Basics",
+          whyItMatters: ["Processing documents", "Running batch jobs", "Avoiding duplicate data", "Managing eval artifacts"],
+          concepts: [
+            {
+              title: "ETL and ELT",
+              explanation: "ETL extracts, transforms, then loads data. ELT loads raw data first, then transforms it later.",
+              aiUseCase: "Keep raw documents, parsed records, chunks, embeddings, and eval outputs as separate stages.",
+              plainExample: "Do not overwrite the original PDF when you create cleaned chunks."
+            },
+            {
+              title: "Workers and queues",
+              explanation: "Queues let background workers process slow jobs like parsing, embedding, enrichment, and indexing.",
+              aiUseCase: "Keep uploads responsive while workers handle expensive document processing.",
+              plainExample: "User uploads a file, gets 'processing', and the worker embeds it later."
+            },
+            {
+              title: "SQL and indexes",
+              explanation: "SQL joins, indexes, migrations, and query plans matter for metadata, jobs, permissions, and evals.",
+              aiUseCase: "Store document records, chunk metadata, user access, and job states reliably.",
+              plainExample: "Index document_id and tenant_id so retrieval filters do not become slow."
+            },
+            {
+              title: "Idempotent jobs",
+              explanation: "An idempotent job can run more than once without duplicating or corrupting records.",
+              aiUseCase: "Safely retry failed ingestion and reprocess documents after model changes.",
+              plainExample: "Use a document checksum and chunk IDs so reruns update existing rows.",
+              code: `chunk_id = f\"{document_id}:{section}:{index}\"\nupsert_chunk(chunk_id=chunk_id, text=text, embedding=embedding)`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "No raw/processed separation", better: "Keep raw, parsed, chunks, embeddings, and evals separate" },
+            { mistake: "Jobs cannot be retried safely", better: "Use idempotent IDs and upserts" },
+            { mistake: "No object storage layout", better: "Organize artifacts by stage, tenant, document, and version" }
+          ],
+          checklist: ["Explain ETL vs ELT", "Use workers for slow jobs", "Store metadata in SQL", "Make ingestion idempotent"]
+        }
+      }
     ]
   },
   {

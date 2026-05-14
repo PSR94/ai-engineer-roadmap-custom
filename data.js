@@ -666,7 +666,7 @@ git status`
               title: "Issues and project boards",
               explanation: "Issues track work, bugs, and decisions. Boards organize what is planned, in progress, and done.",
               aiUseCase: "Track tasks like add evals, improve retrieval, fix latency, and update README.",
-              plainExample: "Each capstone should have issues for setup, ingestion, evals, deployment, and demo polish.",
+              plainExample: "Each project should have issues for setup, ingestion, evals, deployment, and demo polish.",
               code: `# Use GitHub Issues for task tracking`
             },
             {
@@ -1475,7 +1475,6 @@ assert build_context(["chunk one"]) == expected`
     weeks: "Weeks 8–12",
     weeksDetail: "5 weeks · 10 modules",
     difficulty: 4,
-    capstone: 1,
     summary: "The longest phase. RAG looks simple in tutorials and is brutal in production.",
     endState: "You can build a RAG system, measure why it's wrong, and fix it with data instead of vibes.",
     sections: [
@@ -2760,7 +2759,6 @@ assert build_context(["chunk one"]) == expected`
     weeks: "Weeks 20–22",
     weeksDetail: "3 weeks · 8 modules",
     difficulty: 5,
-    capstone: 2,
     summary: "When one agent isn't enough.",
     endState: "You can design a multi-step agent workflow on a whiteboard, build it in LangGraph, and debug it when one node loops infinitely.",
     sections: [
@@ -2775,7 +2773,7 @@ assert build_context(["chunk one"]) == expected`
           goal: "Decide when multi-agent orchestration is actually worth the added complexity.",
           whyIntro: "Multi-agent systems are powerful, but they are expensive to debug. You will use this judgment when you are:",
           conceptsTitle: "Multi-Agent Decision Points",
-          whyItMatters: ["Avoiding over-engineering", "Splitting specialist work", "Controlling cost", "Designing capstone workflows"],
+          whyItMatters: ["Avoiding over-engineering", "Splitting specialist work", "Controlling cost", "Designing project workflows"],
           concepts: [
             {
               title: "Single agent first",
@@ -3447,7 +3445,6 @@ assert build_context(["chunk one"]) == expected`
     weeks: "Weeks 25–26",
     weeksDetail: "2 weeks · 8 modules",
     difficulty: 3,
-    capstone: 3,
     summary: "The final mile. Minimum AWS to make everything earlier deployable, plus how to actually put an agent in production and keep costs sane.",
     endState: "You can take any system you built in earlier phases, dockerize it, deploy to ECS Fargate behind API Gateway, manage secrets, stream tokens to a chat UI, load-test it, and watch the cost dashboard move only when it should.",
     sections: [
@@ -3828,133 +3825,5 @@ assert build_context(["chunk one"]) == expected`
         }
       }
     ]
-  }
-];
-
-window.CAPSTONES = [
-  {
-    n: 1,
-    title: "Distributed Document Ingestion + RAG Pipeline",
-    phase: "Built during Phase 4 · Weeks 10–12",
-    domain: "Unstructured document Q&A (legal, pharma, technical docs)",
-    build: [
-      "PDF ingestion: Docling layout detection → semantic chunking → PII redaction → entity extraction → embeddings → Pinecone + Neo4j",
-      "Distributed async workers on ECS Fargate processing thousands of PDFs concurrently",
-      "DynamoDB state tracking per document (queued / processing / done / failed)",
-      "Hybrid retrieval (vector + BM25 + graph) with reranking",
-      "Evaluation harness with golden dataset, Precision@k / Recall@k / RAG Triad",
-      "FastAPI Q&A endpoint with citation-backed answers"
-    ],
-    stack: ["Docling", "Pinecone", "Neo4j", "Docker", "ECS Fargate", "DynamoDB", "S3", "Bedrock embeddings", "LangSmith", "GitHub Actions"],
-    deliverables: [
-      "Runnable ingestion worker with retry-safe document states",
-      "RAG API endpoint with citations and retrieved-source inspection",
-      "Eval report showing retrieval metrics and RAG Triad scores"
-    ],
-    acceptance: [
-      "At least 50 golden Q&A cases with expected source chunks",
-      "Failed document jobs can be retried without duplicate chunks",
-      "Every answer returns source metadata or a safe no-answer response"
-    ],
-    proves: "You can build production RAG, not a Streamlit demo."
-  },
-  {
-    n: 2,
-    title: "Multi-Agent Natural Language → SQL on E-commerce Data",
-    phase: "Built during Phase 7 · Weeks 21–22",
-    domain: "E-commerce analytics for non-technical users",
-    build: [
-      "Multi-agent: Planner → SQL Writer → Validator → Executor → Explainer",
-      "Schema-aware context injection per query (only relevant tables sent to writer)",
-      "LangGraph orchestration with conditional routing, durable execution, and retry loops",
-      "Read-only DB enforcement, query timeout, max-row caps, and per-tool permission checks",
-      "Human approval flow before exporting, emailing, or persisting generated analysis",
-      "Streamlit frontend, FastAPI backend, RDS PostgreSQL with realistic data",
-      "Benchmarked on a golden NLQ test set, target 85%+ accuracy, with trace links for failures"
-    ],
-    stack: ["LangChain", "LangGraph", "LangSmith", "AgentCore", "RDS PostgreSQL", "FastAPI", "Streamlit", "Docker", "Bedrock"],
-    deliverables: [
-      "LangGraph workflow for planner, SQL writer, validator, executor, and explainer",
-      "Read-only analytics API with query validation and approval gates",
-      "Evaluation dashboard with natural-language questions, generated SQL, and trace links"
-    ],
-    acceptance: [
-      "85%+ accuracy on the golden NLQ test set",
-      "Unsafe SQL, writes, and high-row queries are blocked before execution",
-      "Every failed run can be debugged from a trace and state snapshot"
-    ],
-    proves: "You can orchestrate multiple specialised agents safely against real production data."
-  },
-  {
-    n: 3,
-    title: "Clinical Trials Knowledge Base",
-    phase: "Built during Phases 8–9 · Weeks 23–26",
-    domain: "Life sciences AI (substitute legal, finance, or your industry)",
-    build: [
-      "Real ClinicalTrials.gov dataset ingestion (or your domain equivalent)",
-      "Hybrid knowledge layer: Pinecone for unstructured PDFs + Neo4j for trial-drug-condition relationships",
-      "Multi-hop relationship queries (\"what other trials used drug X for condition Y?\")",
-      "Full three-layer guardrails — disclaimer auto-injection, contradiction checks, action limits, human approval gates",
-      "Evidence-backed answers — every claim cites the source chunk",
-      "Deployed on AWS with structured logs, traces, metrics, regression tests in CI, semantic cache, cost dashboard"
-    ],
-    stack: ["LangChain", "LangGraph", "Neo4j + Cypher", "Pinecone", "Bedrock + AgentCore + Lambda", "S3", "GitHub Actions", "LangSmith", "MLflow"],
-    deliverables: [
-      "ClinicalTrials.gov ingestion flow with structured trial entities and document chunks",
-      "Hybrid graph plus vector retrieval API with evidence-backed answers",
-      "Production deployment with guardrails, traces, evals, and cost dashboard"
-    ],
-    acceptance: [
-      "Every factual claim includes source evidence",
-      "Medical/legal disclaimer and refusal rules trigger on unsafe requests",
-      "CI runs regression tests for retrieval, guardrails, and structured outputs"
-    ],
-    proves: "You can ship an agent into a regulated domain with evidence, guardrails, and operational control."
-  }
-];
-
-window.OUT_OF_SCOPE = [
-  {
-    title: "Fine-tuning foundation models",
-    why: "RAG, prompting, and tool use solve 95% of business problems faster, cheaper, and with no infra overhead. Fine-tuning earns its weight only when you have a narrow domain, lots of clean labelled data, and prompting has hit a wall — which almost never happens before you've shipped your first agent. Learn it after this roadmap, not during.",
-    pointer: "Start with LoRA + a 7B open model (Llama, Mistral, Qwen) on a single A10/L4 once you have a real motivating use case."
-  },
-  {
-    title: "Voice agents",
-    why: "A whole sub-discipline — STT, TTS, turn-taking, latency budgets, barge-in. Worth its own track, not a side note. You can graft it on top of any agent you build in this roadmap.",
-    pointer: "OpenAI Realtime API, Deepgram + ElevenLabs + LiveKit, or pipecat — pick after you've shipped one text agent."
-  },
-  {
-    title: "ML fundamentals (gradient descent, backprop, transformers from scratch)",
-    why: "Lovely to know. Not required to be an excellent agent engineer in 2026. The Karpathy series is there when you're curious — don't let it block you from shipping.",
-    pointer: "Andrej Karpathy's \"Neural Networks: Zero to Hero\" + the \"Let's build GPT\" video, on weekends."
-  },
-  {
-    title: "Advanced frontend specialization",
-    why: "You need enough frontend to ship usable demos, review tools, and chat interfaces. You do not need to become a full-time product frontend engineer during this roadmap.",
-    pointer: "Learn Streamlit first, then enough React/Next.js and the Vercel AI SDK to build a polished chat UI with streaming, citations, retries, and trace links."
-  }
-];
-
-window.NEXT_STEPS = [
-  {
-    label: "Portfolio",
-    title: "Three repos, three READMEs, one demo video each",
-    body: "The capstones are your portfolio. For each one: a clean GitHub repo with a README that explains the problem, the architecture, the trade-offs, and the eval numbers; a 90-second Loom walking through it; one screenshot of the trace UI showing it actually working."
-  },
-  {
-    label: "LinkedIn",
-    title: "Headline that says what you can ship",
-    body: "Don't write \"AI Engineer\" in your headline — write \"AI Engineer · production RAG, multi-agent systems, AWS Bedrock + LangGraph · shipping in regulated domains.\" Specific gets interviews. Generic gets ignored."
-  },
-  {
-    label: "60-second pitch",
-    title: "What to say in the first interview round",
-    body: "\"I spent six months building three production-grade AI systems end-to-end: a distributed RAG pipeline that ingests thousands of PDFs, a multi-agent NL→SQL system with read-only enforcement, and a clinical-trials knowledge base with three-layer guardrails. I can show you the traces, the eval numbers, and the cost dashboard for any of them.\" That's the whole pitch. Numbers and artefacts beat adjectives."
-  },
-  {
-    label: "Keep learning",
-    title: "What to read once you're shipping",
-    body: "Anthropic's \"Building effective agents\" essay, the Latent Space podcast, the LangChain blog, Eugene Yan's writing on production ML, and the original papers when something keeps confusing you (Self-RAG, RAG-as-judge, ReAct). Skim, don't drown."
   }
 ];

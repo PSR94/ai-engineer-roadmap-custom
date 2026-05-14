@@ -178,7 +178,7 @@ function PhaseTabBox({ phase }) {
 const isMac = typeof navigator !== 'undefined'
   && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
 
-function CommandPalette({ open, onClose, onJumpPhase, onJumpCapstone }) {
+function CommandPalette({ open, onClose, onJumpPhase }) {
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef(null);
@@ -202,15 +202,6 @@ function CommandPalette({ open, onClose, onJumpPhase, onJumpCapstone }) {
           haystack: `${s.title} ${s.n} ${(s.items || []).join(' ')}`.toLowerCase(),
           action: () => onJumpPhase(pi)
         });
-      });
-    });
-    window.CAPSTONES.forEach((c, ci) => {
-      out.push({
-        kind: 'capstone',
-        label: c.title,
-        sub: `Capstone ${c.n} · ${c.domain}`,
-        haystack: `${c.title} ${c.domain} ${(c.build || []).join(' ')}`.toLowerCase(),
-        action: () => onJumpCapstone(ci)
       });
     });
     return out;
@@ -284,7 +275,7 @@ function CommandPalette({ open, onClose, onJumpPhase, onJumpCapstone }) {
             ref={inputRef}
             className="cmdk__input"
             type="text"
-            placeholder="Search phases, modules, capstones…"
+            placeholder="Search phases and modules…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             aria-label="Search"
@@ -336,7 +327,6 @@ function App() {
   });
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
   const phaseRefs = useRef([]);
-  const capstoneRefs = useRef([]);
   const agendaRef = useRef(null);
   const dockNodeRefs = useRef([]);
   const progressFillRef = useRef(null);
@@ -468,17 +458,9 @@ function App() {
     if (!el) return;
     scrollToElement(el, 24, 56, true);
   };
-  const scrollToCapstone = (i) => scrollToElement(capstoneRefs.current[i], 24, 72, false);
   const scrollToAgenda = () => scrollToElement(agendaRef.current, 24, 72, false);
 
   const totalSections = window.ROADMAP.reduce((a, p) => a + p.sections.length, 0);
-
-  const capstoneTiles = window.CAPSTONES.map((c, i) => ({
-    n: c.n,
-    title: c.title.split(/[—:]|on /)[0].trim(),
-    domain: c.domain,
-    color: ['pink', 'mustard', 'teal-deep'][i]
-  }));
 
   return (
     <React.Fragment>
@@ -491,7 +473,7 @@ function App() {
           <div className="nav__meta" aria-hidden="true">
             <span><b>26</b> weeks</span>
             <span><b>9</b> phases</span>
-            <span><b>3</b> capstones</span>
+            <span><b>{totalSections}</b> modules</span>
           </div>
           <button
             type="button"
@@ -558,10 +540,6 @@ function App() {
             <div className="hero__stat-num">26</div>
             <div className="hero__stat-label">Weeks</div>
           </div>
-          <div>
-            <div className="hero__stat-num">{window.CAPSTONES.length}</div>
-            <div className="hero__stat-label">Capstones</div>
-          </div>
         </div>
       </header>
 
@@ -585,28 +563,6 @@ function App() {
               <div className="agenda__tile-num">{String(p.id).padStart(2, '0')}</div>
               <div className="agenda__tile-title">{p.short}</div>
               <div className="agenda__tile-weeks">{p.weeks}</div>
-              <div className="agenda__tile-arrow">→</div>
-            </button>
-          ))}
-        </div>
-
-        {/* Projects in their own row */}
-        <div className="agenda__projects-head">
-          <span className="agenda__projects-label">◆ Capstone Projects</span>
-          <span className="agenda__projects-line" />
-        </div>
-        <div className="agenda__grid agenda__grid--projects">
-          {capstoneTiles.map((c) => (
-            <button key={`cap-${c.n}`}
-              type="button"
-              className="agenda__tile is-capstone"
-              data-color={c.color}
-              aria-label={`Jump to capstone project ${c.n}: ${c.title}`}
-              onClick={() => scrollToCapstone(c.n - 1)}>
-              <div className="agenda__tile-glow" />
-              <div className="agenda__tile-cap-label">Project {c.n}</div>
-              <div className="agenda__tile-title">{c.title}</div>
-              <div className="agenda__tile-domain">{c.domain}</div>
               <div className="agenda__tile-arrow">→</div>
             </button>
           ))}
@@ -660,9 +616,6 @@ function App() {
                   <div className="phase__diff-note">{phase.difficultyNote}</div>
                 )}
               </div>
-              {phase.capstone && (
-                <div className="phase__capstone-pill">Capstone {phase.capstone}</div>
-              )}
             </div>
             <div className="phase__body">
               <h2 className="phase__title">
@@ -679,129 +632,18 @@ function App() {
         ))}
       </section>
 
-      {/* CAPSTONES */}
-      <section className="capstones reveal" data-screen-label="Capstones">
-        <div className="capstones__eyebrow">Three Capstone Projects</div>
-        <h2 className="capstones__title">Theory bound to <em>production reality.</em></h2>
-        <p className="capstones__intro">
-          Each capstone lands at the end of a phase cluster. They aren't toys — they're the proof
-          that the curriculum stuck.
-        </p>
-        <div className="capstone-grid">
-          {window.CAPSTONES.map((c, i) => (
-            <article key={c.n}
-              className="capstone reveal"
-              ref={el => capstoneRefs.current[i] = el}>
-              <div className="capstone__left">
-                <div className="capstone__num">CAPSTONE {String(c.n).padStart(2, '0')}</div>
-                <div className="capstone__title">{c.title}</div>
-                <div className="capstone__phase">{c.phase}</div>
-                <div className="capstone__domain">{c.domain}</div>
-                <div className="capstone__stack">
-                  {c.stack.map((s, i) => (
-                    <span key={i} className="capstone__stack-pill">{s}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="capstone__build">
-                <div className="capstone__build-label">What you build</div>
-                {c.build.map((b, i) => (
-                  <div key={i} className="capstone__build-item">
-                    <span className="capstone__build-num">{String(i + 1).padStart(2, '0')}</span>
-                    <span>{b}</span>
-                  </div>
-                ))}
-                <div className="capstone__proves">
-                  <span className="capstone__proves-label">Proves</span>
-                  {c.proves}
-                </div>
-                {c.deliverables && c.deliverables.length > 0 && (
-                  <div className="capstone__detail-block">
-                    <div className="capstone__build-label">Ship checklist</div>
-                    {c.deliverables.map((item, i) => (
-                      <div key={i} className="capstone__detail-item">
-                        <span className="capstone__detail-mark">✓</span>
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {c.acceptance && c.acceptance.length > 0 && (
-                  <div className="capstone__detail-block">
-                    <div className="capstone__build-label">Acceptance checks</div>
-                    {c.acceptance.map((item, i) => (
-                      <div key={i} className="capstone__detail-item">
-                        <span className="capstone__detail-mark">→</span>
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* OUT OF SCOPE */}
-      <section className="outscope reveal" data-screen-label="Out of scope">
-        <div className="outscope__head">
-          <div className="outscope__eyebrow">◇ Out of scope (and why)</div>
-          <h2 className="outscope__title">What this roadmap <em>doesn't</em> cover.</h2>
-          <p className="outscope__intro">
-            Every roadmap is as much about what's left out as what's in. These topics are real and useful —
-            they're just not on the critical path to becoming a shipping AI engineer in 2026.
-          </p>
-        </div>
-        <div className="outscope__grid">
-          {window.OUT_OF_SCOPE.map((o, i) => (
-            <article key={i} className="outscope__card">
-              <div className="outscope__card-num">{String(i + 1).padStart(2, '0')}</div>
-              <h3 className="outscope__card-title">{o.title}</h3>
-              <p className="outscope__card-why">{o.why}</p>
-              <div className="outscope__card-pointer">
-                <span className="outscope__card-pointer-label">Where to look</span>
-                <span>{o.pointer}</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* WHERE TO GO FROM HERE */}
-      <section className="next reveal" data-screen-label="Where to go from here">
-        <div className="next__head">
-          <div className="next__eyebrow">→ After the roadmap</div>
-          <h2 className="next__title">Where to go <em>from here.</em></h2>
-          <p className="next__intro">
-            You finished the curriculum and built three production systems. Now turn that work into interviews,
-            offers, and the next thing you ship.
-          </p>
-        </div>
-        <div className="next__grid">
-          {window.NEXT_STEPS.map((n, i) => (
-            <article key={i} className="next__card">
-              <div className="next__card-label">{n.label}</div>
-              <h3 className="next__card-title">{n.title}</h3>
-              <p className="next__card-body">{n.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
       </main>
 
       <CommandPalette
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
-        onJumpPhase={scrollToPhase}
-        onJumpCapstone={scrollToCapstone} />
+        onJumpPhase={scrollToPhase} />
 
       <footer className="footer reveal">
         <h2 className="footer__title">
           The journey ends where the <em>real work</em> begins.
         </h2>
-        <div className="footer__meta">26 weeks · 9 phases · {totalSections} modules · 3 capstones · one engineer</div>
+        <div className="footer__meta">26 weeks · 9 phases · {totalSections} modules · one engineer</div>
       </footer>
     </React.Fragment>
   );

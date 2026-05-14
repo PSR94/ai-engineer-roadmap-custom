@@ -3451,14 +3451,382 @@ assert build_context(["chunk one"]) == expected`
     summary: "The final mile. Minimum AWS to make everything earlier deployable, plus how to actually put an agent in production and keep costs sane.",
     endState: "You can take any system you built in earlier phases, dockerize it, deploy to ECS Fargate behind API Gateway, manage secrets, stream tokens to a chat UI, load-test it, and watch the cost dashboard move only when it should.",
     sections: [
-      { n: "9.1", title: "Storage & data", items: ["S3 — durable object storage, document lakes", "RDS PostgreSQL — managed relational DB for agent state", "DynamoDB — KV state for ingestion pipelines"] },
-      { n: "9.2", title: "Compute", items: ["Lambda — serverless event-driven flows", "ECS Fargate — serverless containers for long-running agents", "ECR — container registry"] },
-      { n: "9.3", title: "Networking & access", items: ["VPC, subnets, security groups (just enough not to break)", "IAM roles and policies", "API Gateway for exposing endpoints"] },
-      { n: "9.4", title: "AI-specific services (and other clouds)", items: ["AWS Bedrock — managed foundation models", "AWS AgentCore — production agent infrastructure", "Bedrock embeddings", "Equivalents on other clouds: GCP Vertex AI (Model Garden, Agent Builder) and Azure AI Foundry (model catalog, prompt flow) — same primitives, different SKUs"] },
-      { n: "9.5", title: "Docker and reproducible local dev", items: ["Dockerfile for FastAPI agents", "docker compose for app + Postgres + Redis + worker", ".dockerignore, small images, healthchecks, non-root users", "Rebuild from scratch on another machine and get the same app"] },
-      { n: "9.6", title: "Deployment & realtime delivery", items: ["ECS Fargate task definitions", "API Gateway + ALB routing", "Secrets management with AWS Secrets Manager", "Environment promotion (dev → staging → prod)", "Streaming responses to chat UIs — SSE for one-way token streaming, WebSockets when you also need client → server messages mid-stream"] },
-      { n: "9.7", title: "CI/CD with GitHub Actions", items: ["Run lint, type checks, unit tests, integration tests, and eval tests on every PR", "Build and push Docker images to ECR", "Deploy to staging automatically, production with manual approval", "Rollback strategy, release notes, and environment-specific secrets"] },
-      { n: "9.8", title: "Production observability & cost control", items: ["Structured logs with request IDs and trace IDs", "Metrics: request count, error rate, p95 latency, queue depth, token spend", "Alerts for tool failure spikes, cost anomalies, and eval regressions", "Semantic cache HIT rate as a KPI", "Model routing — cheap model for simple queries, expensive for complex", "Load testing with locust or k6 — agents fall over under concurrency long before the LLM does; rate-limit at the gateway, not the model"] }
+      {
+        n: "9.1",
+        title: "Storage & data",
+        items: ["S3 — durable object storage, document lakes", "RDS PostgreSQL — managed relational DB for agent state", "DynamoDB — KV state for ingestion pipelines"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Choose the right AWS storage layer for documents, relational state, and ingestion pipeline metadata.",
+          whyIntro: "Most production AI systems are storage systems first. You will use these services when you are:",
+          conceptsTitle: "Storage And Data",
+          whyItMatters: ["Storing documents", "Tracking agent state", "Managing ingestion jobs", "Keeping artifacts organized"],
+          concepts: [
+            {
+              title: "S3 object storage",
+              explanation: "S3 stores durable objects such as uploaded PDFs, raw files, processed chunks, eval artifacts, and logs.",
+              aiUseCase: "Use S3 as the document lake for RAG and ingestion pipelines.",
+              plainExample: "Store raw PDFs under raw/, parsed JSON under processed/, and eval results under evals/."
+            },
+            {
+              title: "RDS PostgreSQL",
+              explanation: "RDS provides managed relational storage for structured records, agent state, users, permissions, and metadata.",
+              aiUseCase: "Store workflow state, document records, users, tenants, and approval objects.",
+              plainExample: "Use Postgres for 'which user can access which document'."
+            },
+            {
+              title: "DynamoDB",
+              explanation: "DynamoDB is a managed key-value store useful for high-throughput job status and simple state records.",
+              aiUseCase: "Track ingestion job states like queued, processing, done, failed, and retry count.",
+              plainExample: "A document_id key can point to current processing status."
+            },
+            {
+              title: "Storage layout",
+              explanation: "A good layout separates raw, processed, embeddings, traces, and eval artifacts by tenant, document, and version.",
+              aiUseCase: "Make reprocessing and audit work predictable.",
+              plainExample: "s3://bucket/tenant/doc/version/stage/file keeps lineage clear."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Putting everything in one database", better: "Use object storage for files and databases for structured state" },
+            { mistake: "No versioned paths", better: "Include tenant, document, version, and stage in storage layout" },
+            { mistake: "Ignoring permissions metadata", better: "Store access control with documents and chunks" }
+          ],
+          checklist: ["Use S3 for document artifacts", "Use RDS for relational state", "Use DynamoDB for simple job state", "Design versioned storage paths"]
+        }
+      },
+      {
+        n: "9.2",
+        title: "Compute",
+        items: ["Lambda — serverless event-driven flows", "ECS Fargate — serverless containers for long-running agents", "ECR — container registry"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Choose compute based on runtime length, concurrency, deployment model, and operational needs.",
+          whyIntro: "AI workloads mix short events, long-running agents, and background workers. You will use compute choices when you are:",
+          conceptsTitle: "Compute Options",
+          whyItMatters: ["Running APIs", "Processing jobs", "Deploying containers", "Scaling workers"],
+          concepts: [
+            {
+              title: "Lambda",
+              explanation: "Lambda is serverless compute for short event-driven tasks.",
+              aiUseCase: "Use for webhooks, lightweight preprocessing, scheduled checks, and glue code.",
+              plainExample: "A Lambda can start an ingestion job when a file lands in S3."
+            },
+            {
+              title: "ECS Fargate",
+              explanation: "Fargate runs containers without managing servers and works well for APIs, workers, and long-running agents.",
+              aiUseCase: "Deploy FastAPI apps, document workers, queues, and agent services.",
+              plainExample: "A RAG API container and a background embedding worker can both run on Fargate."
+            },
+            {
+              title: "ECR",
+              explanation: "ECR stores Docker images for deployment to ECS, Lambda containers, or other AWS runtimes.",
+              aiUseCase: "Build once in CI, push to ECR, deploy the exact image to staging and production.",
+              plainExample: "The image tagged with a commit SHA is what production runs."
+            },
+            {
+              title: "Choosing compute",
+              explanation: "Use Lambda for short jobs and events. Use containers for APIs, workers, streaming, and workflows with more dependencies.",
+              aiUseCase: "Avoid forcing long-running agents into short serverless limits.",
+              plainExample: "A multi-minute document processor belongs in a worker container, not a tiny Lambda."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using Lambda for long-running agents", better: "Use containers for long jobs and streaming APIs" },
+            { mistake: "Manual server setup", better: "Prefer managed runtimes unless you need custom infrastructure" },
+            { mistake: "Mutable production images", better: "Deploy immutable image tags from CI" }
+          ],
+          checklist: ["Use Lambda for short events", "Use Fargate for containers", "Push images to ECR", "Match compute to workload length"]
+        }
+      },
+      {
+        n: "9.3",
+        title: "Networking & access",
+        items: ["VPC, subnets, security groups (just enough not to break)", "IAM roles and policies", "API Gateway for exposing endpoints"],
+        detail: {
+          duration: "60–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand enough networking and IAM to expose services safely without blocking your own app.",
+          whyIntro: "Deployment failures often come from networking and permissions. You will use this when you are:",
+          conceptsTitle: "Networking And Access",
+          whyItMatters: ["Exposing APIs", "Connecting databases", "Restricting permissions", "Avoiding public data leaks"],
+          concepts: [
+            {
+              title: "VPC and subnets",
+              explanation: "A VPC isolates cloud resources. Subnets organize public and private resources.",
+              aiUseCase: "Keep databases private while exposing only API entry points.",
+              plainExample: "Your FastAPI service can be public, but Postgres should not be."
+            },
+            {
+              title: "Security groups",
+              explanation: "Security groups control which traffic can reach a resource.",
+              aiUseCase: "Allow the API service to reach Postgres, but block the public internet from the database.",
+              plainExample: "Only ECS tasks can connect to RDS on port 5432."
+            },
+            {
+              title: "IAM roles and policies",
+              explanation: "IAM controls what AWS actions a service can perform.",
+              aiUseCase: "Give workers permission to read specific S3 buckets and write logs, not full admin access.",
+              plainExample: "An ingestion worker can read raw documents but cannot delete the whole bucket."
+            },
+            {
+              title: "API Gateway",
+              explanation: "API Gateway exposes HTTP endpoints, handles routing, auth integration, throttling, and request limits.",
+              aiUseCase: "Put rate limits and auth in front of model-backed APIs.",
+              plainExample: "A chat endpoint should have gateway throttling before it reaches expensive model calls."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Public databases", better: "Keep data stores private and expose APIs instead" },
+            { mistake: "Overbroad IAM", better: "Grant least-privilege roles per service" },
+            { mistake: "No gateway limits", better: "Use throttling before requests reach expensive agents" }
+          ],
+          checklist: ["Explain VPC/subnets", "Use security groups", "Create least-privilege IAM roles", "Expose endpoints through API Gateway"]
+        }
+      },
+      {
+        n: "9.4",
+        title: "AI-specific services (and other clouds)",
+        items: ["AWS Bedrock — managed foundation models", "AWS AgentCore — production agent infrastructure", "Bedrock embeddings", "Equivalents on other clouds: GCP Vertex AI (Model Garden, Agent Builder) and Azure AI Foundry (model catalog, prompt flow) — same primitives, different SKUs"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Map core AI platform services across clouds so you can deploy models, agents, embeddings, and eval workflows.",
+          whyIntro: "Cloud names differ, but the primitives repeat. You will use these services when you are:",
+          conceptsTitle: "AI Cloud Services",
+          whyItMatters: ["Calling managed models", "Using embeddings", "Deploying agents", "Comparing cloud offerings"],
+          concepts: [
+            {
+              title: "AWS Bedrock",
+              explanation: "Bedrock provides managed foundation models, embeddings, guardrails, and related AI platform capabilities.",
+              aiUseCase: "Use Bedrock when AWS-native governance, IAM, networking, and managed model access matter.",
+              plainExample: "A regulated AWS app may prefer Bedrock because it fits existing cloud controls."
+            },
+            {
+              title: "Agent infrastructure",
+              explanation: "Agent services help host, orchestrate, secure, and observe production agent workflows.",
+              aiUseCase: "Use when moving from local prototypes to managed production agents.",
+              plainExample: "A deployed agent needs identity, tools, logs, permissions, and runtime controls."
+            },
+            {
+              title: "Embeddings services",
+              explanation: "Managed embedding APIs turn documents and queries into vectors for search.",
+              aiUseCase: "Use with vector stores, RAG pipelines, semantic cache, and deduplication.",
+              plainExample: "Embed every chunk before indexing it for retrieval."
+            },
+            {
+              title: "Other clouds",
+              explanation: "Vertex AI and Azure AI Foundry expose similar primitives with different names, integrations, and pricing.",
+              aiUseCase: "Translate concepts across cloud providers instead of memorizing one SKU list.",
+              plainExample: "Model catalog, prompt flow, agent builder, and eval tools appear in most major clouds."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Learning only service names", better: "Understand the underlying primitives" },
+            { mistake: "Ignoring governance fit", better: "Choose services that match IAM, networking, compliance, and team skill" },
+            { mistake: "No exit plan", better: "Keep model/provider boundaries clean enough to switch later" }
+          ],
+          checklist: ["Explain Bedrock", "Use managed embeddings", "Understand agent platform services", "Map equivalents across clouds"]
+        }
+      },
+      {
+        n: "9.5",
+        title: "Docker and reproducible local dev",
+        items: ["Dockerfile for FastAPI agents", "docker compose for app + Postgres + Redis + worker", ".dockerignore, small images, healthchecks, non-root users", "Rebuild from scratch on another machine and get the same app"],
+        detail: {
+          duration: "75–90 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show Dockerfile example",
+          hideCodeLabel: "Hide Dockerfile example",
+          codeLabel: "Dockerfile example",
+          goal: "Package AI apps so they run the same way locally, in CI, and in production.",
+          whyIntro: "Reproducibility is what turns demos into deployable systems. You will use Docker when you are:",
+          conceptsTitle: "Docker Basics",
+          whyItMatters: ["Packaging FastAPI apps", "Running local services", "Reproducing bugs", "Deploying containers"],
+          concepts: [
+            {
+              title: "Dockerfile",
+              explanation: "A Dockerfile defines the runtime image for your app, dependencies, command, and health behavior.",
+              aiUseCase: "Package FastAPI agents, background workers, and eval services.",
+              plainExample: "A teammate should run the same app without rebuilding your laptop setup.",
+              code: `FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nCMD [\"uvicorn\", \"app:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]`
+            },
+            {
+              title: "docker compose",
+              explanation: "Compose starts multiple local services together, such as API, Postgres, Redis, and workers.",
+              aiUseCase: "Run a realistic local stack for agents, queues, and databases.",
+              plainExample: "One command starts your API and the database it depends on."
+            },
+            {
+              title: ".dockerignore and small images",
+              explanation: "Ignore local files, caches, secrets, and large artifacts to keep images small and safe.",
+              aiUseCase: "Avoid shipping notebooks, .env files, and huge local data into production images.",
+              plainExample: "Do not copy your API key file into the Docker image."
+            },
+            {
+              title: "Healthchecks and non-root users",
+              explanation: "Production containers should expose health endpoints and avoid running as root when possible.",
+              aiUseCase: "Let orchestrators restart unhealthy containers and reduce security risk.",
+              plainExample: "ECS can replace a task when /health fails."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Works only on my machine", better: "Run app and dependencies through Docker/Compose" },
+            { mistake: "Copying secrets into images", better: "Inject secrets at runtime" },
+            { mistake: "Huge images", better: "Use .dockerignore and slim base images" }
+          ],
+          checklist: ["Write a Dockerfile", "Use docker compose", "Add .dockerignore", "Add healthchecks and safer runtime settings"]
+        }
+      },
+      {
+        n: "9.6",
+        title: "Deployment & realtime delivery",
+        items: ["ECS Fargate task definitions", "API Gateway + ALB routing", "Secrets management with AWS Secrets Manager", "Environment promotion (dev → staging → prod)", "Streaming responses to chat UIs — SSE for one-way token streaming, WebSockets when you also need client → server messages mid-stream"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Deploy containerized AI services with secrets, environment promotion, routing, and realtime response delivery.",
+          whyIntro: "Deployment is where app design meets infrastructure reality. You will use these patterns when you are:",
+          conceptsTitle: "Deployment And Realtime",
+          whyItMatters: ["Deploying APIs", "Managing secrets", "Promoting environments", "Streaming model responses"],
+          concepts: [
+            {
+              title: "ECS task definitions",
+              explanation: "Task definitions describe container image, CPU, memory, environment variables, ports, health checks, and secrets.",
+              aiUseCase: "Deploy FastAPI agents and workers with predictable runtime settings.",
+              plainExample: "A worker task may need more memory than the API task."
+            },
+            {
+              title: "Routing with API Gateway and ALB",
+              explanation: "API Gateway and load balancers route public traffic to private services and apply limits or auth.",
+              aiUseCase: "Expose chat, ingest, eval, and admin endpoints safely.",
+              plainExample: "Public users hit API Gateway, not the ECS task directly."
+            },
+            {
+              title: "Secrets management",
+              explanation: "Secrets Manager stores credentials and injects them into runtime without committing them to code.",
+              aiUseCase: "Protect model keys, DB passwords, webhook secrets, and provider tokens.",
+              plainExample: "Production reads OPENAI_API_KEY from a secret, not from Git."
+            },
+            {
+              title: "SSE and WebSockets",
+              explanation: "SSE is good for one-way token streaming. WebSockets are better when client and server both need to send messages mid-stream.",
+              aiUseCase: "Use SSE for chat token streams and WebSockets for interactive sessions or cancellation-heavy workflows.",
+              plainExample: "A normal chat answer can stream over SSE; a collaborative agent session may need WebSockets."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Same environment for dev and prod", better: "Promote through dev, staging, and production" },
+            { mistake: "Secrets in env files committed to Git", better: "Use managed secrets and runtime injection" },
+            { mistake: "Using WebSockets for every stream", better: "Use SSE when one-way streaming is enough" }
+          ],
+          checklist: ["Define ECS tasks", "Route through gateway/load balancer", "Use Secrets Manager", "Choose SSE vs WebSockets"]
+        }
+      },
+      {
+        n: "9.7",
+        title: "CI/CD with GitHub Actions",
+        items: ["Run lint, type checks, unit tests, integration tests, and eval tests on every PR", "Build and push Docker images to ECR", "Deploy to staging automatically, production with manual approval", "Rollback strategy, release notes, and environment-specific secrets"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show workflow skeleton",
+          hideCodeLabel: "Hide workflow skeleton",
+          codeLabel: "GitHub Actions skeleton",
+          goal: "Automate tests, evals, image builds, and deployments so releases are repeatable and reviewable.",
+          whyIntro: "CI/CD prevents production changes from being a manual ritual. You will use it when you are:",
+          conceptsTitle: "CI/CD Basics",
+          whyItMatters: ["Testing every PR", "Running evals", "Building images", "Deploying safely"],
+          concepts: [
+            {
+              title: "PR checks",
+              explanation: "Every PR should run linting, type checks, unit tests, integration tests, and AI eval tests where relevant.",
+              aiUseCase: "Catch prompt, retrieval, tool, and schema regressions before merge.",
+              plainExample: "A changed prompt should run the golden eval set before deployment."
+            },
+            {
+              title: "Build and push images",
+              explanation: "CI builds Docker images and pushes immutable tags to ECR.",
+              aiUseCase: "Deploy the same image to staging and production.",
+              plainExample: "Tag the image with the Git commit SHA.",
+              code: `name: ci\non: [pull_request, push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pytest\n      - run: python evals/run.py`
+            },
+            {
+              title: "Staging and production",
+              explanation: "Staging can deploy automatically after merge. Production should often require manual approval.",
+              aiUseCase: "Test AI behavior in a production-like environment before users see it.",
+              plainExample: "Deploy to staging, run smoke tests, then approve production."
+            },
+            {
+              title: "Rollback strategy",
+              explanation: "A rollback plan defines how to return to a known-good image, prompt version, or model route.",
+              aiUseCase: "Recover quickly from bad prompts, model changes, or broken deployments.",
+              plainExample: "Repoint production to the previous image tag and prompt version."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Skipping evals in CI", better: "Run golden evals for prompt/model/retrieval changes" },
+            { mistake: "Manual deployments only", better: "Automate build and deploy steps" },
+            { mistake: "No rollback", better: "Keep previous image and prompt versions deployable" }
+          ],
+          checklist: ["Run PR checks", "Run AI evals in CI", "Build and push Docker images", "Use staging, approval, and rollback"]
+        }
+      },
+      {
+        n: "9.8",
+        title: "Production observability & cost control",
+        items: ["Structured logs with request IDs and trace IDs", "Metrics: request count, error rate, p95 latency, queue depth, token spend", "Alerts for tool failure spikes, cost anomalies, and eval regressions", "Semantic cache HIT rate as a KPI", "Model routing — cheap model for simple queries, expensive for complex", "Load testing with locust or k6 — agents fall over under concurrency long before the LLM does; rate-limit at the gateway, not the model"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Operate an AI app with logs, metrics, alerts, cost controls, routing, caching, and load tests.",
+          whyIntro: "Production AI apps fail through cost, latency, queues, tools, and bad routing. You will use this when you are:",
+          conceptsTitle: "Production Operations",
+          whyItMatters: ["Controlling spend", "Finding failures", "Scaling safely", "Protecting user experience"],
+          concepts: [
+            {
+              title: "Structured logs and trace IDs",
+              explanation: "Logs should include request IDs, trace IDs, route, tenant, model, tool status, and safe error summaries.",
+              aiUseCase: "Follow one bad answer across frontend, backend, tools, model calls, and eval logs.",
+              plainExample: "A support ticket links to the exact trace that produced the answer."
+            },
+            {
+              title: "Metrics and alerts",
+              explanation: "Track request count, error rate, p95 latency, queue depth, token spend, tool failures, and eval regressions.",
+              aiUseCase: "Alert on cost spikes, broken tools, slow model calls, and retrieval quality drops.",
+              plainExample: "If tool failures jump from 1% to 20%, page the team before users report it."
+            },
+            {
+              title: "Cache and routing KPIs",
+              explanation: "Semantic cache hit rate and model routing accuracy directly affect cost and latency.",
+              aiUseCase: "Route easy tasks to cheaper models and hard tasks to stronger models.",
+              plainExample: "A classification request should not use the most expensive reasoning model."
+            },
+            {
+              title: "Load testing and gateway limits",
+              explanation: "Agents often fail under concurrency before the model provider does, because queues, DB pools, and tools saturate.",
+              aiUseCase: "Use locust or k6 and enforce rate limits before expensive backend work starts.",
+              plainExample: "Rate-limit at the gateway so one user cannot overload your agent workers."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Tracking only model errors", better: "Track tools, queues, retrieval, cache, latency, and spend" },
+            { mistake: "No cost anomaly alerts", better: "Alert on token spend and expensive route spikes" },
+            { mistake: "Load testing only the API shell", better: "Test real agent paths with tools and model calls mocked or controlled" }
+          ],
+          checklist: ["Use structured logs", "Track metrics and alerts", "Monitor cache and model routing", "Run load tests with gateway limits"]
+        }
+      }
     ]
   }
 ];

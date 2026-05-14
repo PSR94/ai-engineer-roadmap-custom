@@ -2685,7 +2685,7 @@ class TicketRoute(BaseModel):
     short: "Memory + Context Engineering",
     color: "amber",
     weeks: "Weeks 17–19",
-    weeksDetail: "3 weeks · 7 modules",
+    weeksDetail: "3 weeks · 8 modules",
     difficulty: 4,
     difficultyNote: "Advanced — but the highest-leverage skill in the whole curriculum.",
     summary: "The hardest conceptual phase. Easy to do badly, expensive when you do. Worth every hour of attention.",
@@ -2693,8 +2693,8 @@ class TicketRoute(BaseModel):
     sections: [
       {
         n: "6.1",
-        title: "The context window as working memory",
-        items: ["Why agents \"forget\" mid-conversation", "Token budgeting per section", "The lost-in-the-middle problem", "Recency bias"],
+        title: "Context Windows and Failure Modes",
+        items: ["Why agents \"forget\" mid-conversation", "Token budgeting per section", "The lost-in-the-middle problem", "Recency bias", "Illustrative defaults are tuned with evals, not fixed laws"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
@@ -2739,8 +2739,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "6.2",
-        title: "Context structure — SYSTEM / CONTEXT / USER separation",
-        items: ["What goes where", "@dynamic_prompt patterns", "Structural separation as a security defence against prompt injection", "Token budgets per section (e.g. SYSTEM=instructions, CONTEXT=retrieved data, ~2000 tokens each)"],
+        title: "Context Structure and Instruction Boundaries",
+        items: ["What goes where", "@dynamic_prompt patterns", "Structural separation as a security defence against prompt injection", "Token budgets per section tuned by task, model, and eval results"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -2789,8 +2789,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "6.3",
-        title: "Short-term memory — session history",
-        items: ["Sliding window of last N turns", "Message-pair preservation (don't split user from assistant)", "When to keep tool calls in history vs strip them"],
+        title: "Short-Term Session Memory",
+        items: ["Recent-turn windows tuned by task and evals", "Message-pair preservation (don't split user from assistant)", "When to keep tool calls in history vs strip them", "When to promote a fact from session history into durable memory"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
@@ -2804,7 +2804,7 @@ class TicketRoute(BaseModel):
               title: "Sliding window",
               explanation: "A sliding window keeps the most recent turns and drops older turns when context grows too large.",
               aiUseCase: "Preserve recent user intent while staying within token budget.",
-              plainExample: "Keep the last 10 turns, not every message from a month-long chat."
+              plainExample: "Keep enough recent turns for the current task, not every message from a month-long chat."
             },
             {
               title: "Message pairs",
@@ -2835,8 +2835,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "6.4",
-        title: "Semantic caching",
-        items: ["FAISS IndexFlatIP for sub-millisecond cosine search", "Similarity thresholds (0.97 high-stakes, 0.88 general Q&A)", "Cache HIT skips everything downstream", "Daemon-thread writes so cache never blocks response"],
+        title: "Semantic Caching: Benefits, Risks, and Tuning",
+        items: ["What semantic caching solves", "Exact-match vs semantic cache", "False-hit risk", "Threshold tuning with evals", "Observability: hit rate, latency saved, and quality regressions"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -2844,8 +2844,8 @@ class TicketRoute(BaseModel):
           showCodeLabel: "Show cache example",
           hideCodeLabel: "Hide cache example",
           codeLabel: "Semantic cache example",
-          goal: "Use semantic caching to skip repeated work when new questions are close enough to previous ones.",
-          whyIntro: "Semantic caching cuts latency and cost, but only when thresholds are chosen carefully. You will use it when you are:",
+          goal: "Use semantic caching to reduce repeated work while measuring false hits, stale answers, and quality regressions.",
+          whyIntro: "Semantic caching cuts latency and cost only when thresholds and scope are chosen carefully. You will use it when you are:",
           conceptsTitle: "Semantic Caching",
           whyItMatters: ["Reducing token spend", "Improving latency", "Avoiding repeated retrieval", "Scaling common Q&A"],
           concepts: [
@@ -2857,41 +2857,47 @@ class TicketRoute(BaseModel):
               code: `if similarity(query_embedding, cached_embedding) > 0.92:\n    return cached_answer\n\nanswer = run_rag_pipeline(query)`
             },
             {
-              title: "Thresholds",
-              explanation: "Higher thresholds reduce wrong cache hits. Lower thresholds increase reuse but can return stale or mismatched answers.",
+              title: "Exact vs semantic cache",
+              explanation: "Exact-match caches are safer but less reusable. Semantic caches reuse more answers but risk false hits.",
+              aiUseCase: "Choose exact cache for deterministic API responses and semantic cache for repeated Q&A patterns.",
+              plainExample: "Two identical API calls can use exact cache; two similar policy questions may need semantic cache."
+            },
+            {
+              title: "Threshold tuning",
+              explanation: "Higher thresholds reduce wrong cache hits. Lower thresholds increase reuse but can return stale or mismatched answers. Treat values like 0.92 as illustrative defaults to tune with evals.",
               aiUseCase: "Use strict thresholds for legal, medical, financial, or account-specific answers.",
               plainExample: "A password-reset question should not reuse an answer for refund policy."
             },
             {
               title: "Cache HIT path",
-              explanation: "A cache hit can skip retrieval, reranking, model calls, and tool calls.",
+              explanation: "A safe cache hit may skip retrieval, reranking, model calls, or tool calls depending on risk and freshness.",
               aiUseCase: "Serve repeated FAQ-style questions quickly and cheaply.",
               plainExample: "A cached answer can return in milliseconds instead of seconds."
             },
             {
-              title: "Non-blocking writes",
-              explanation: "Cache writes should not slow the user response path.",
-              aiUseCase: "Write cache entries asynchronously after a successful answer.",
-              plainExample: "Return the answer first, then store the embedding and answer in the background."
+              title: "Observability",
+              explanation: "Track hit rate, false-hit rate, latency saved, cost saved, stale-answer rate, and user feedback after cache hits.",
+              aiUseCase: "Disable or tighten caching when quality drops.",
+              plainExample: "A high hit rate is bad if cached answers are wrong for changed policies."
             }
           ],
           commonMistakes: [
-            { mistake: "Threshold too low", better: "Use stricter thresholds for high-stakes answers" },
+            { mistake: "Treating one threshold as universal", better: "Tune thresholds by domain, risk, and eval results" },
             { mistake: "Caching user-specific answers globally", better: "Scope cache by tenant, user, permissions, and data version" },
-            { mistake: "Blocking on cache writes", better: "Write asynchronously after response" }
+            { mistake: "No cache quality monitoring", better: "Track false hits, stale hits, and regressions" }
           ],
-          checklist: ["Explain semantic cache hits", "Choose thresholds by risk", "Scope cache entries", "Write cache entries asynchronously"]
+          checklist: ["Explain semantic cache hits", "Compare exact and semantic cache", "Tune thresholds with evals", "Track cache quality and hit rate"]
         }
       },
       {
         n: "6.5",
-        title: "Episodic memory",
-        items: ["LangChain's InMemoryStore", "LLM tags answers as EPISODIC: YES/NO so the model decides what's worth remembering", "Episodic hits enrich CONTEXT only — tools and LLM still run"],
+        title: "Episodic Memory and Memory-Write Policies",
+        items: ["What is worth storing", "Memory-write policies", "Relevance scoring", "Decay and recency", "Human review for sensitive memory", "Avoiding noisy or harmful persistence"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Store useful past events as optional context without replacing retrieval, tools, or fresh reasoning.",
+          goal: "Store useful past events deliberately, with clear write policies, relevance scoring, decay, and review paths.",
           whyIntro: "Episodic memory helps agents learn from prior interactions. You will use it when you are:",
           conceptsTitle: "Episodic Memory",
           whyItMatters: ["Remembering useful events", "Personalizing context", "Avoiding repeated explanations", "Keeping memory optional"],
@@ -2903,10 +2909,16 @@ class TicketRoute(BaseModel):
               plainExample: "Remember that the user already tried restarting the service."
             },
             {
-              title: "Memory tagging",
-              explanation: "An LLM or rules can decide whether a new interaction is worth saving.",
+              title: "Memory-write policies",
+              explanation: "Rules, models, or human review can decide whether a new interaction is worth saving.",
               aiUseCase: "Tag stable preferences or important outcomes, not every message.",
               plainExample: "Save 'prefers concise answers', but not 'said hello'."
+            },
+            {
+              title: "Relevance, decay, and recency",
+              explanation: "Memories should be scored by relevance and freshness so old or weak memories do not dominate current context.",
+              aiUseCase: "Boost recent confirmed preferences and decay stale assumptions.",
+              plainExample: "A project preference from last year may no longer apply."
             },
             {
               title: "Memory as context",
@@ -2915,10 +2927,10 @@ class TicketRoute(BaseModel):
               plainExample: "Past order status may be outdated, so query the order tool again."
             },
             {
-              title: "Memory store choices",
-              explanation: "In-memory stores are useful for demos. Production memory usually needs persistence, permissions, deletion, and auditability.",
-              aiUseCase: "Start simple, then move to durable stores when memory must survive sessions.",
-              plainExample: "A demo can use memory in RAM; a real app needs a database."
+              title: "Sensitive memory review",
+              explanation: "Sensitive, personal, or inferred memories need stronger consent, review, and deletion controls.",
+              aiUseCase: "Avoid silently profiling users or persisting wrong assumptions.",
+              plainExample: "Do not store a health-related inference without a clear product need and consent."
             }
           ],
           commonMistakes: [
@@ -2926,13 +2938,13 @@ class TicketRoute(BaseModel):
             { mistake: "Treating old memory as truth", better: "Verify current facts with tools" },
             { mistake: "No delete path", better: "Support memory review and removal" }
           ],
-          checklist: ["Explain episodic memory", "Tag useful events", "Use memory as optional context", "Plan persistence and deletion"]
+          checklist: ["Explain episodic memory", "Define memory-write policies", "Use relevance and decay", "Review sensitive memories"]
         }
       },
       {
         n: "6.6",
-        title: "Context compression",
-        items: ["Trigger threshold (>3000 tokens)", "Keep last 10 messages verbatim", "LLM summarises the rest into a single compressed entry", "When compression destroys information"],
+        title: "Compression, Summarization, and Context Compaction",
+        items: ["Compression triggers tuned by model, workflow, and evals", "Keep recent active turns verbatim when needed", "Summarize older context into structured entries", "When compression destroys information"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
@@ -2947,16 +2959,16 @@ class TicketRoute(BaseModel):
           concepts: [
             {
               title: "Compression triggers",
-              explanation: "Compress when history crosses a token threshold or when the next request needs room for context and output.",
+              explanation: "Compress when history crosses a task-specific token threshold or when the next request needs room for context and output.",
               aiUseCase: "Prevent old history from crowding out retrieved evidence.",
-              plainExample: "Summarize older turns when the chat exceeds 3,000 tokens.",
-              code: `if history_tokens > 3000:\n    summary = summarize_old_history(history[:-10])\n    history = [summary] + history[-10:]`
+              plainExample: "A 3,000-token trigger can be a starting default, but it should be tuned with evals.",
+              code: `if history_tokens > compression_threshold:\n    summary = summarize_old_history(old_history)\n    history = [summary] + recent_history`
             },
             {
               title: "Keep recent turns verbatim",
               explanation: "Recent messages often carry active intent, so keep them exactly when possible.",
               aiUseCase: "Preserve the current task while compressing older context.",
-              plainExample: "Keep the last 10 messages unchanged and summarize the older part."
+              plainExample: "Keep the recent active exchange unchanged and summarize the older part."
             },
             {
               title: "What to preserve",
@@ -2976,13 +2988,13 @@ class TicketRoute(BaseModel):
             { mistake: "Compressing exact evidence", better: "Keep IDs, source passages, and code verbatim when needed" },
             { mistake: "Dropping recent turns", better: "Keep recent active context unchanged" }
           ],
-          checklist: ["Set compression triggers", "Keep recent turns verbatim", "Preserve decisions and sources", "Know when not to compress"]
+          checklist: ["Tune compression triggers", "Keep recent turns verbatim", "Preserve decisions and sources", "Know when not to compress"]
         }
       },
       {
         n: "6.7",
-        title: "Long-term memory",
-        items: ["User profiles, preferences, facts to persist", "Vector stores vs structured stores", "Managed memory layers — mem0 (open-source) and Zep (managed) — when to skip building this yourself", "When memory becomes a privacy problem (GDPR, right-to-be-forgotten flows)"],
+        title: "Long-Term Memory, Privacy, and Deletion",
+        items: ["User profiles, preferences, and facts to persist", "Vector stores vs structured stores", "Explicit consent and user-visible memory controls", "Retention policies, forget/delete workflows, and avoiding silent profiling", "Managed memory layers — mem0 and Zep — when to skip building this yourself"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -2990,7 +3002,7 @@ class TicketRoute(BaseModel):
           goal: "Design durable memory that is useful, permissioned, reviewable, and deletable.",
           whyIntro: "Long-term memory changes user trust and privacy obligations. You will use it when you are:",
           conceptsTitle: "Long-Term Memory",
-          whyItMatters: ["Persisting preferences", "Personalizing agents", "Managing privacy", "Choosing memory storage"],
+          whyItMatters: ["Persisting preferences", "Personalizing agents", "Managing privacy", "Supporting deletion"],
           concepts: [
             {
               title: "What to persist",
@@ -3015,6 +3027,12 @@ class TicketRoute(BaseModel):
               explanation: "Long-term memory must support user consent, review, correction, deletion, retention limits, and tenant isolation.",
               aiUseCase: "Build right-to-be-forgotten flows before memory becomes a liability.",
               plainExample: "A user should be able to delete a stored preference or sensitive fact."
+            },
+            {
+              title: "User-visible controls",
+              explanation: "Users should be able to see, correct, disable, and delete important memories.",
+              aiUseCase: "Avoid silent profiling and make personalization trustworthy.",
+              plainExample: "A settings page can show stored preferences and a delete button."
             }
           ],
           commonMistakes: [
@@ -3022,7 +3040,53 @@ class TicketRoute(BaseModel):
             { mistake: "Using vectors for exact permissions", better: "Use structured stores for exact facts and access control" },
             { mistake: "No deletion workflow", better: "Build memory deletion and audit from the start" }
           ],
-          checklist: ["Choose what to persist", "Compare vector and structured memory", "Evaluate managed memory layers", "Plan privacy and deletion"]
+          checklist: ["Choose what to persist", "Compare vector and structured memory", "Get consent for memory", "Plan privacy, retention, and deletion"]
+        }
+      },
+      {
+        n: "6.8",
+        title: "Memory Evaluation and Regression Testing",
+        items: ["Recall quality", "Stale memory rate", "Contradiction rate", "Privacy risk", "Personalization usefulness", "Does memory improve task success?"],
+        detail: {
+          duration: "45–60 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Measure whether memory improves outcomes or silently makes the agent worse.",
+          whyIntro: "Memory can help, distract, leak data, or preserve wrong assumptions. You will evaluate it when you are:",
+          conceptsTitle: "Memory Evaluation",
+          whyItMatters: ["Measuring recall quality", "Finding stale memories", "Reducing privacy risk", "Testing personalization"],
+          concepts: [
+            {
+              title: "Recall quality",
+              explanation: "Memory retrieval should surface relevant memories when they help and stay quiet when they do not.",
+              aiUseCase: "Test whether the right preferences, prior decisions, or historical events appear in context.",
+              plainExample: "A stored coding-language preference should appear for coding examples, not billing questions."
+            },
+            {
+              title: "Staleness and contradictions",
+              explanation: "Track stale memory rate and contradiction rate so old facts do not override newer truth.",
+              aiUseCase: "Detect when memory conflicts with current tools, documents, or explicit user updates.",
+              plainExample: "If a user changed teams, old team-specific permissions should not keep applying."
+            },
+            {
+              title: "Privacy and consent evals",
+              explanation: "Memory tests should check that sensitive facts are not stored or recalled without policy and consent.",
+              aiUseCase: "Create regression tests for delete requests, retention limits, and sensitive memory handling.",
+              plainExample: "After a forget request, the memory should not appear in future context."
+            },
+            {
+              title: "Task success impact",
+              explanation: "Memory is worth keeping only if it improves task success, user satisfaction, speed, or cost without raising risk.",
+              aiUseCase: "Compare workflows with memory on and off.",
+              plainExample: "If memory does not improve support resolution, simplify the system."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Assuming memory always helps", better: "A/B test memory against task success and quality" },
+            { mistake: "No stale-memory checks", better: "Track stale and contradictory memories" },
+            { mistake: "Ignoring delete regressions", better: "Test forget/delete workflows in CI" }
+          ],
+          checklist: ["Measure recall quality", "Track stale and contradictory memory", "Test privacy/delete flows", "Compare task success with and without memory"]
         }
       }
     ]
@@ -3040,8 +3104,8 @@ class TicketRoute(BaseModel):
     sections: [
       {
         n: "7.1",
-        title: "When to go multi-agent (and when not to)",
-        items: ["Single-agent-with-tools beats multi-agent for ~80% of tasks", "Multi-agent earns its weight when steps need different prompts, tools, or specialised reasoning", "The Tableau→QuickSight conversion case as a worked example"],
+        title: "When Multi-Agent Is Worth It",
+        items: ["Default to a single agent with tools", "Move to multi-agent only when decomposition, role specialization, or independently managed subflows justify the cost", "The Tableau→QuickSight conversion case as a worked example"],
         detail: {
           duration: "45–60 min",
           level: "Advanced",
@@ -3232,8 +3296,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "7.5",
-        title: "State management",
-        items: ["Typed state with Pydantic", "What to put in state vs context", "Checkpointers for resumability (MemorySaver, SqliteSaver, PostgresSaver)"],
+        title: "State, Checkpointing, and Resumability",
+        items: ["Typed state with Pydantic", "What to put in state vs context", "Checkpointers for resumability", "Retry-safe state updates", "Pause/resume after human approval"],
         detail: {
           duration: "60–75 min",
           level: "Advanced",
@@ -3282,12 +3346,12 @@ class TicketRoute(BaseModel):
       },
       {
         n: "7.6",
-        title: "A2A — Agent-to-Agent Protocol",
-        items: ["Agent discovery and capability cards", "Cross-framework delegation", "When A2A beats just calling another function"],
+        title: "A2A and Interoperability",
+        items: ["Emerging interoperability for agents across systems", "Agent discovery and capability cards", "Cross-framework delegation", "When A2A beats just calling another function"],
         detail: {
           duration: "45–60 min",
           level: "Advanced",
-          status: "Required",
+          status: "Optional",
           goal: "Understand when agent-to-agent communication is useful and when simple function calls are enough.",
           whyIntro: "A2A matters when independent agents need to discover and delegate across boundaries. You will use it when you are:",
           conceptsTitle: "A2A Concepts",
@@ -3328,37 +3392,37 @@ class TicketRoute(BaseModel):
       },
       {
         n: "7.7",
-        title: "Frameworks compared (briefly)",
-        items: ["LangGraph (most mature)", "CrewAI (simpler, opinionated)", "AutoGen (Microsoft)", "Pydantic AI (typed, FastAPI-flavoured ergonomics)", "OpenAI Swarm / its successor — minimal handoff-style orchestration", "Custom orchestration with raw asyncio", "Pick one and stick with it"],
+        title: "Frameworks Compared by Design Philosophy",
+        items: ["Graph/state-machine orchestration", "Role/task abstraction", "Typed Python ergonomics", "Raw control with custom orchestration", "Current examples under each axis change over time"],
         detail: {
           duration: "45–60 min",
           level: "Advanced",
           status: "Required",
           goal: "Choose an orchestration approach based on workflow complexity, typing needs, team skill, and production requirements.",
           whyIntro: "Framework choice affects debugging, hiring, maintenance, and speed. You will use this when you are:",
-          conceptsTitle: "Framework Comparison",
+          conceptsTitle: "Framework Design Axes",
           whyItMatters: ["Choosing a stack", "Avoiding rewrites", "Matching complexity", "Planning production support"],
           concepts: [
             {
-              title: "LangGraph",
-              explanation: "LangGraph is a strong default for durable graph workflows with state, routing, cycles, and checkpointers.",
+              title: "Graph and state-machine systems",
+              explanation: "Graph-first frameworks are strong for durable workflows with state, routing, cycles, and checkpointers.",
               aiUseCase: "Use for complex multi-step systems that need explicit control flow.",
               plainExample: "Natural language to SQL with validation and retries fits LangGraph well."
             },
             {
-              title: "CrewAI and AutoGen",
-              explanation: "CrewAI is simpler and opinionated. AutoGen is useful in Microsoft-heavy or research-style multi-agent setups.",
+              title: "Role and task abstractions",
+              explanation: "Role/task frameworks can speed up prototypes when the project naturally maps to specialists and delegated tasks.",
               aiUseCase: "Use when the framework's style matches the team's workflow and project risk.",
               plainExample: "A quick role-based prototype may be easier in CrewAI."
             },
             {
-              title: "Pydantic AI and handoff-style systems",
-              explanation: "Typed frameworks and minimal handoff systems work well when typed outputs and clean Python ergonomics matter.",
+              title: "Typed Python ergonomics",
+              explanation: "Typed frameworks work well when schemas, validation, FastAPI-style code, and clean Python ergonomics matter.",
               aiUseCase: "Use for FastAPI-flavored apps and structured agent outputs.",
               plainExample: "A typed support agent can return a Pydantic response model directly."
             },
             {
-              title: "Custom asyncio",
+              title: "Raw control and custom orchestration",
               explanation: "Custom orchestration can be best when the workflow is deterministic and model calls are just one part of the system.",
               aiUseCase: "Use raw Python for fixed pipelines, simple parallelism, and low framework overhead.",
               plainExample: "If every step is known, asyncio tasks may beat an agent framework."
@@ -3369,21 +3433,21 @@ class TicketRoute(BaseModel):
             { mistake: "Using a graph framework for fixed scripts", better: "Use simpler code when orchestration is deterministic" },
             { mistake: "Ignoring team familiarity", better: "Choose something the team can debug under pressure" }
           ],
-          checklist: ["Compare major frameworks", "Match framework to workflow complexity", "Know when custom code is enough", "Commit to one stack for a project"]
+          checklist: ["Compare design axes", "Match framework to workflow complexity", "Know when custom code is enough", "Commit to one stack for a project"]
         }
       },
       {
         n: "7.8",
-        title: "Debugging multi-agent systems",
-        items: ["LangSmith tracing", "Why your agents are talking past each other", "Cycles that won't terminate", "Cost explosions"],
+        title: "Multi-Agent Evaluation and Debugging",
+        items: ["Tracing every node, tool call, and routing decision", "Bad routing decisions", "Shared-state corruption", "Incompatible tool contracts", "Impossible termination conditions", "Workflow success rate, retry depth, handoff accuracy, and cost per completed task"],
         detail: {
           duration: "60–75 min",
           level: "Advanced",
           status: "Required",
-          goal: "Debug multi-agent failures by inspecting traces, state transitions, routing decisions, and costs.",
+          goal: "Evaluate and debug multi-agent failures by inspecting traces, state transitions, routing decisions, contracts, and costs.",
           whyIntro: "Multi-agent bugs hide between components. You will debug them when you are:",
-          conceptsTitle: "Multi-Agent Debugging",
-          whyItMatters: ["Finding routing bugs", "Stopping infinite loops", "Reducing spend", "Fixing agent miscommunication"],
+          conceptsTitle: "Multi-Agent Evaluation",
+          whyItMatters: ["Finding routing bugs", "Stopping infinite loops", "Reducing spend", "Measuring workflow success"],
           concepts: [
             {
               title: "Trace every step",
@@ -3392,10 +3456,22 @@ class TicketRoute(BaseModel):
               plainExample: "A trace shows that the validator rejected valid SQL because it received the wrong schema."
             },
             {
+              title: "Bad routing decisions",
+              explanation: "Routing fails when the wrong node receives the task, a confidence threshold is mis-set, or a fallback is missing.",
+              aiUseCase: "Measure handoff accuracy and inspect route choices by workflow path.",
+              plainExample: "A billing question routed to a policy agent will fail even if both agents are individually good."
+            },
+            {
               title: "Agents talking past each other",
               explanation: "Specialists fail when their contracts, terminology, or output formats do not match.",
               aiUseCase: "Define typed interfaces and shared vocabulary between agents.",
               plainExample: "The planner says 'metric', the SQL writer expects 'column', and the executor receives neither."
+            },
+            {
+              title: "Shared-state corruption",
+              explanation: "State bugs happen when multiple nodes overwrite fields, use incompatible schemas, or mutate data out of order.",
+              aiUseCase: "Assign state ownership and validate updates at node boundaries.",
+              plainExample: "A validator should not overwrite the SQL writer's query unless repair is explicitly allowed."
             },
             {
               title: "Cycles that do not terminate",
@@ -3404,18 +3480,18 @@ class TicketRoute(BaseModel):
               plainExample: "After three failed SQL repairs, return a clear failure instead of looping."
             },
             {
-              title: "Cost explosions",
-              explanation: "Multi-agent systems multiply model calls, tool calls, context size, and retries.",
-              aiUseCase: "Track cost by node, route, model, and user request.",
-              plainExample: "One user question can become 20 model calls if every reviewer reflects twice."
+              title: "Workflow metrics",
+              explanation: "Track success rate by workflow path, retry depth, handoff accuracy, tool-call success per node, and cost per completed task.",
+              aiUseCase: "Compare orchestration patterns with evidence instead of judging only final answers.",
+              plainExample: "A graph may improve accuracy but cost too much per completed request."
             }
           ],
           commonMistakes: [
             { mistake: "Only inspecting final output", better: "Inspect traces and state transitions" },
             { mistake: "No typed contracts between agents", better: "Use schemas for handoffs" },
-            { mistake: "No per-node cost tracking", better: "Track tokens, latency, and retries by node" }
+            { mistake: "No workflow metrics", better: "Track success rate, retry depth, handoff accuracy, and cost per task" }
           ],
-          checklist: ["Trace every graph step", "Define handoff contracts", "Stop infinite loops", "Track cost by node"]
+          checklist: ["Trace every graph step", "Define handoff contracts", "Stop infinite loops", "Measure workflow success and cost"]
         }
       }
     ]

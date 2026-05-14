@@ -1767,7 +1767,7 @@ class TicketRoute(BaseModel):
       {
         n: "4.2",
         title: "Embeddings",
-        items: ["What an embedding actually is (vector in N-dim space)", "Cosine similarity, dot product, Euclidean distance", "Embedding models — Titan Multimodal, SentenceTransformer, OpenAI ada/text-embedding-3, Cohere", "Choosing dimensions vs cost"],
+        items: ["What an embedding actually is (vector in N-dim space)", "Cosine similarity, dot product, Euclidean distance", "Embedding models — commercial APIs, open-source models, and cloud-native options", "Choosing dimensions vs cost"],
         detail: {
           duration: "60–75 min",
           level: "Beginner",
@@ -1795,7 +1795,7 @@ class TicketRoute(BaseModel):
             },
             {
               title: "Model choice",
-              explanation: "Embedding models differ in language coverage, dimensions, cost, speed, and multimodal support.",
+              explanation: "Embedding models differ in language coverage, dimensions, cost, speed, and multimodal support. Examples include OpenAI text-embedding-3-small/large, Cohere, SentenceTransformers/open-source models, and Bedrock/Titan embeddings.",
               aiUseCase: "Pick based on documents, query language, budget, and retrieval quality.",
               plainExample: "A PDF-image workflow may need multimodal embeddings, not just text embeddings."
             },
@@ -1912,16 +1912,16 @@ class TicketRoute(BaseModel):
       },
       {
         n: "4.5",
-        title: "Chunk enrichment",
-        items: ["PII detection and redaction", "NER for entities", "Key-phrase extraction", "Metadata for hybrid search"],
+        title: "Metadata Enrichment & Access Control",
+        items: ["PII detection and redaction", "NER for entities", "Key-phrase extraction", "Metadata for hybrid search", "Document ACLs, user/role filters, and tenant-aware retrieval"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Add metadata and safety processing that makes chunks easier to search, filter, and protect.",
+          goal: "Add metadata, enrichment, and access filters that make chunks searchable without leaking data.",
           whyIntro: "Raw chunks are rarely enough in production. You will enrich chunks when you are:",
-          conceptsTitle: "Chunk Enrichment",
-          whyItMatters: ["Protecting PII", "Filtering retrieval", "Improving hybrid search", "Supporting analytics"],
+          conceptsTitle: "Metadata and Access Control",
+          whyItMatters: ["Protecting PII", "Filtering retrieval", "Improving hybrid search", "Preventing data leakage"],
           concepts: [
             {
               title: "PII redaction",
@@ -1946,20 +1946,32 @@ class TicketRoute(BaseModel):
               explanation: "Metadata such as document type, source, tenant, date, permissions, and section supports filtering and ranking.",
               aiUseCase: "Search only documents a user is allowed to see.",
               plainExample: "A sales user should not retrieve HR-only documents."
+            },
+            {
+              title: "Access-controlled retrieval",
+              explanation: "Retrieval must filter by document ACLs, tenant, role, and user permissions before context reaches the model.",
+              aiUseCase: "Prevent the model from seeing records the requester is not allowed to access.",
+              plainExample: "Never retrieve an executive compensation document for a user outside that access group."
+            },
+            {
+              title: "Tenant isolation",
+              explanation: "Multi-tenant systems must keep each customer's documents, chunks, embeddings, and metadata separated.",
+              aiUseCase: "Apply tenant filters at query time and enforce them inside the retrieval service.",
+              plainExample: "Acme's support bot should never search Globex documents."
             }
           ],
           commonMistakes: [
             { mistake: "Storing sensitive raw text unnecessarily", better: "Redact or tokenize PII early" },
             { mistake: "Metadata as an afterthought", better: "Design metadata fields before indexing" },
-            { mistake: "No permission filters", better: "Filter retrieval by tenant, role, and document ACLs" }
+            { mistake: "Relying on prompt instructions for access control", better: "Filter retrieval by tenant, role, user, and document ACLs before model context" }
           ],
-          checklist: ["Redact PII", "Extract entities", "Add key phrases", "Use metadata filters"]
+          checklist: ["Redact PII", "Extract entities", "Add key phrases", "Enforce ACL and tenant filters"]
         }
       },
       {
         n: "4.6",
-        title: "Vector databases",
-        items: ["Pinecone, Weaviate, pgvector", "Chroma for local dev", "S3 Vector Buckets, OpenSearch", "HNSW vs IVF indexes", "Decision matrix: managed (Pinecone) vs self-hosted (Weaviate, Qdrant) vs in-process (Chroma, FAISS) vs already-in-your-stack (pgvector)"],
+        title: "Vector Stores and Indexing",
+        items: ["Pinecone, Weaviate, pgvector, Qdrant, Chroma, FAISS, OpenSearch", "HNSW vs IVF indexes", "Metadata filters for permissions and scope", "Update/delete workflows", "Embedding versioning, reindex strategy, and stale index cleanup"],
         detail: {
           duration: "60–90 min",
           level: "Intermediate",
@@ -1967,10 +1979,10 @@ class TicketRoute(BaseModel):
           showCodeLabel: "Show pgvector example",
           hideCodeLabel: "Hide pgvector example",
           codeLabel: "Vector query example",
-          goal: "Choose and operate a vector store based on scale, latency, team skill, and deployment constraints.",
+          goal: "Choose and operate a vector store based on scale, latency, filters, lifecycle needs, and deployment constraints.",
           whyIntro: "The vector database is where retrieval becomes infrastructure. You will use it when you are:",
-          conceptsTitle: "Vector Database Concepts",
-          whyItMatters: ["Storing embeddings", "Serving semantic search", "Filtering by metadata", "Scaling retrieval"],
+          conceptsTitle: "Vector Store Concepts",
+          whyItMatters: ["Storing embeddings", "Serving semantic search", "Filtering by metadata", "Reindexing safely"],
           concepts: [
             {
               title: "Vector store options",
@@ -1996,20 +2008,26 @@ class TicketRoute(BaseModel):
               explanation: "Managed stores reduce ops work. Self-hosting gives more control but adds maintenance.",
               aiUseCase: "Choose based on compliance, scale, budget, and team capacity.",
               plainExample: "If your team already runs Postgres well, pgvector may be enough."
+            },
+            {
+              title: "Lifecycle and reindexing",
+              explanation: "Production indexes need update, delete, re-embed, and cleanup workflows as documents and embedding models change.",
+              aiUseCase: "Track embedding model version, chunk version, source checksum, and deleted document state.",
+              plainExample: "When a policy changes, old chunks should be replaced or marked stale, not left searchable."
             }
           ],
           commonMistakes: [
             { mistake: "Choosing a database by hype", better: "Choose by workload, scale, filters, and ops model" },
             { mistake: "No metadata filtering", better: "Design filters before indexing" },
-            { mistake: "Ignoring reindexing cost", better: "Plan for embedding model changes and document updates" }
+            { mistake: "Ignoring reindexing cost", better: "Plan for embedding model changes, document updates, deletes, and stale index cleanup" }
           ],
-          checklist: ["Compare vector store options", "Explain HNSW/IVF tradeoffs", "Use metadata filters", "Choose managed vs self-hosted intentionally"]
+          checklist: ["Compare vector store options", "Explain HNSW/IVF tradeoffs", "Use metadata filters", "Plan update/delete and reindex workflows"]
         }
       },
       {
         n: "4.7",
-        title: "Hybrid retrieval & next-gen retrievers",
-        items: ["Vector search + BM25 keyword", "Reranking with cross-encoders (Cohere Rerank, BGE)", "Metadata filtering", "Query expansion", "Late-interaction retrievers — ColBERT (text), ColPali (multimodal/PDF pages as images) — when they beat dense retrieval and what they cost"],
+        title: "Hybrid Retrieval, Reranking, and Query Rewriting",
+        items: ["Vector search + BM25 keyword", "Reranking with cross-encoders", "Metadata filtering", "Query rewriting and expansion", "Late-interaction retrievers — ColBERT and ColPali — when they beat dense retrieval and what they cost"],
         detail: {
           duration: "75–90 min",
           level: "Intermediate",
@@ -2032,8 +2050,8 @@ class TicketRoute(BaseModel):
               plainExample: "Reranking is slower but often improves final context quality."
             },
             {
-              title: "Query expansion",
-              explanation: "Query expansion rewrites or adds related terms to improve recall.",
+              title: "Query rewriting",
+              explanation: "Query rewriting and expansion clarify ambiguous user questions or add related terms to improve recall.",
               aiUseCase: "Expand user language into domain terms before retrieval.",
               plainExample: "'Can I get my money back?' can expand to 'refund, reimbursement, return policy'."
             },
@@ -2054,17 +2072,67 @@ class TicketRoute(BaseModel):
       },
       {
         n: "4.8",
-        title: "Graph-augmented RAG",
-        items: ["Neo4j basics", "Cypher query language", "When graph relationships beat pure vector search", "Multi-hop queries"],
+        title: "Grounded Answer Generation & Citations",
+        items: ["Answer only from retrieved context", "Source citations and evidence span selection", "Refuse or ask for clarification when retrieval is weak", "Context-only vs mixed-knowledge answer strategies"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
           status: "Required",
+          showCodeLabel: "Show citation prompt example",
+          hideCodeLabel: "Hide citation prompt example",
+          codeLabel: "Citation prompt example",
+          goal: "Generate answers that stay grounded in retrieved evidence and show users where claims came from.",
+          whyIntro: "RAG is only useful when users can trust and verify the answer. You will use grounding when you are:",
+          conceptsTitle: "Grounded Answering",
+          whyItMatters: ["Reducing hallucinations", "Showing citations", "Handling weak retrieval", "Building trust"],
+          concepts: [
+            {
+              title: "Answer from context",
+              explanation: "A grounded answer should use the retrieved context as evidence instead of filling gaps from model memory.",
+              aiUseCase: "Build assistants that answer from policies, contracts, manuals, tickets, or internal docs.",
+              plainExample: "If the retrieved policy does not mention contractor PTO, the assistant should say it cannot verify that answer."
+            },
+            {
+              title: "Citations and evidence spans",
+              explanation: "Citations should point to source documents, pages, sections, or exact spans that support the answer.",
+              aiUseCase: "Let users inspect the evidence before trusting a recommendation.",
+              plainExample: "A benefits answer links to handbook page 14 and the exact paragraph used.",
+              code: `SYSTEM: Answer only from the provided context.\nIf the context is insufficient, say what is missing.\nCite each factual claim with source_id and page.`
+            },
+            {
+              title: "Weak retrieval behavior",
+              explanation: "When retrieved chunks are irrelevant or low confidence, the system should refuse, ask a follow-up, or route to fallback search.",
+              aiUseCase: "Avoid confident answers when retrieval did not find supporting evidence.",
+              plainExample: "Say 'I could not find this in the uploaded documents' instead of guessing."
+            },
+            {
+              title: "Context-only vs mixed knowledge",
+              explanation: "Some products require answers only from retrieved documents. Others allow general model knowledge clearly separated from sourced evidence.",
+              aiUseCase: "Choose the strategy based on risk, domain, and user expectations.",
+              plainExample: "Legal, HR, and healthcare bots usually need stricter context-only behavior."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Answering beyond retrieved evidence", better: "Refuse or ask for clarification when evidence is missing" },
+            { mistake: "Citations that point to whole documents only", better: "Prefer page, section, or span-level evidence" },
+            { mistake: "Hiding weak retrieval", better: "Expose uncertainty and fallback behavior" }
+          ],
+          checklist: ["Answer from retrieved context", "Attach source citations", "Handle weak retrieval safely", "Choose context-only vs mixed-knowledge behavior"]
+        }
+      },
+      {
+        n: "4.9",
+        title: "Graph-Augmented RAG — Optional Advanced",
+        items: ["Advanced option for relationship-heavy data", "Neo4j basics and Cypher queries", "When graph relationships beat pure vector search", "Multi-hop queries and provenance"],
+        detail: {
+          duration: "60–75 min",
+          level: "Advanced",
+          status: "Optional",
           showCodeLabel: "Show Cypher example",
           hideCodeLabel: "Hide Cypher example",
           codeLabel: "Cypher example",
           goal: "Know when relationships and multi-hop queries need a graph instead of only vector search.",
-          whyIntro: "Graphs help when relationships are the answer. You will use graph RAG when you are:",
+          whyIntro: "Graphs help when relationships are the answer, but they are not required for every RAG system. You will use graph RAG when you are:",
           conceptsTitle: "Graph RAG Concepts",
           whyItMatters: ["Multi-hop questions", "Entity relationships", "Compliance queries", "Knowledge graphs"],
           concepts: [
@@ -2103,9 +2171,9 @@ class TicketRoute(BaseModel):
         }
       },
       {
-        n: "4.9",
-        title: "RAG evaluation — the part most courses skip",
-        items: ["LLM-as-judge: RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Deterministic retrieval metrics: Precision@k, Recall@k, F1, Hit Rate@k, MRR, NDCG@k", "Tooling: Ragas (the de-facto eval framework), MLflow for run logging, LangSmith for tracing", "Golden datasets: Q&A pairs with expected chunks, regression testing on every code change"],
+        n: "4.10",
+        title: "RAG Evaluation and Regression Testing",
+        items: ["RAG Triad — Faithfulness, Context Relevance, Answer Relevance", "Retrieval metrics: Precision@k, Recall@k, Hit Rate@k, MRR, NDCG@k", "Golden datasets with expected chunks", "Regression testing on every retrieval or prompt change", "Tracing and run logging"],
         detail: {
           duration: "90–120 min",
           level: "Intermediate",
@@ -2150,56 +2218,6 @@ class TicketRoute(BaseModel):
             { mistake: "Changing chunking without regression tests", better: "Run evals before and after every pipeline change" }
           ],
           checklist: ["Explain the RAG Triad", "Use retrieval metrics", "Create a golden dataset", "Log traces and compare runs"]
-        }
-      },
-      {
-        n: "4.10",
-        title: "Data engineering basics for AI systems",
-        items: ["ETL vs ELT — ingest, clean, normalize, enrich, load", "Batch jobs and worker queues for document processing", "SQL joins, indexes, migrations, and query plans", "Object storage layouts: raw / processed / embeddings / eval artifacts", "Idempotency and retry-safe jobs so reprocessing does not duplicate data"],
-        detail: {
-          duration: "75–90 min",
-          level: "Intermediate",
-          status: "Required",
-          showCodeLabel: "Show pipeline example",
-          hideCodeLabel: "Hide pipeline example",
-          codeLabel: "Pipeline example",
-          goal: "Build ingestion and processing flows that can be rerun safely without corrupting data.",
-          whyIntro: "AI systems are data systems with model calls attached. You will use these basics when you are:",
-          conceptsTitle: "Data Engineering Basics",
-          whyItMatters: ["Processing documents", "Running batch jobs", "Avoiding duplicate data", "Managing eval artifacts"],
-          concepts: [
-            {
-              title: "ETL and ELT",
-              explanation: "ETL extracts, transforms, then loads data. ELT loads raw data first, then transforms it later.",
-              aiUseCase: "Keep raw documents, parsed records, chunks, embeddings, and eval outputs as separate stages.",
-              plainExample: "Do not overwrite the original PDF when you create cleaned chunks."
-            },
-            {
-              title: "Workers and queues",
-              explanation: "Queues let background workers process slow jobs like parsing, embedding, enrichment, and indexing.",
-              aiUseCase: "Keep uploads responsive while workers handle expensive document processing.",
-              plainExample: "User uploads a file, gets 'processing', and the worker embeds it later."
-            },
-            {
-              title: "SQL and indexes",
-              explanation: "SQL joins, indexes, migrations, and query plans matter for metadata, jobs, permissions, and evals.",
-              aiUseCase: "Store document records, chunk metadata, user access, and job states reliably.",
-              plainExample: "Index document_id and tenant_id so retrieval filters do not become slow."
-            },
-            {
-              title: "Idempotent jobs",
-              explanation: "An idempotent job can run more than once without duplicating or corrupting records.",
-              aiUseCase: "Safely retry failed ingestion and reprocess documents after model changes.",
-              plainExample: "Use a document checksum and chunk IDs so reruns update existing rows.",
-              code: `chunk_id = f\"{document_id}:{section}:{index}\"\nupsert_chunk(chunk_id=chunk_id, text=text, embedding=embedding)`
-            }
-          ],
-          commonMistakes: [
-            { mistake: "No raw/processed separation", better: "Keep raw, parsed, chunks, embeddings, and evals separate" },
-            { mistake: "Jobs cannot be retried safely", better: "Use idempotent IDs and upserts" },
-            { mistake: "No object storage layout", better: "Organize artifacts by stage, tenant, document, and version" }
-          ],
-          checklist: ["Explain ETL vs ELT", "Use workers for slow jobs", "Store metadata in SQL", "Make ingestion idempotent"]
         }
       }
     ]
@@ -2317,20 +2335,20 @@ class TicketRoute(BaseModel):
       },
       {
         n: "5.3",
-        title: "MCP — Model Context Protocol",
-        items: ["What MCP is and why it exists (universal adapter for tools)", "MCP servers vs MCP clients", "Using existing MCP servers (filesystem, GitHub, Slack)", "Building your own MCP server", "stdio vs HTTP transports", "MCP is moving fast — bookmark modelcontextprotocol.io and re-read the spec every few months; the registry, auth model, and resource semantics are still evolving"],
+        title: "MCP: Standardized Tool and Context Integration",
+        items: ["MCP as a standardized protocol for connecting AI applications to tools, resources, and prompts", "MCP servers vs MCP clients", "Using existing MCP servers", "Building your own MCP server", "stdio vs HTTP transports", "Consent, privacy, and tool safety"],
         detail: {
           duration: "75–90 min",
           level: "Intermediate",
           status: "Required",
           goal: "Understand MCP as a standard way for agents and apps to discover and use external tools and resources.",
-          whyIntro: "MCP turns integrations into reusable agent infrastructure. You will use it when you are:",
+          whyIntro: "MCP standardizes reusable agent infrastructure. You will use it when you are:",
           conceptsTitle: "MCP Concepts",
           whyItMatters: ["Connecting tools", "Reusing integrations", "Accessing files and apps", "Separating agent logic from tool servers"],
           concepts: [
             {
               title: "Why MCP exists",
-              explanation: "MCP provides a common protocol so different agents can connect to tools, resources, and prompts without custom glue every time.",
+              explanation: "MCP is a standardized protocol for connecting AI applications to tools, resources, and prompts without custom glue every time.",
               aiUseCase: "Expose GitHub, Slack, databases, files, or internal systems through a standard interface.",
               plainExample: "Instead of rebuilding a GitHub integration for every agent, connect to a GitHub MCP server."
             },
@@ -2351,6 +2369,12 @@ class TicketRoute(BaseModel):
               explanation: "MCP is evolving, so auth, registry, resource patterns, and hosting practices may change.",
               aiUseCase: "Treat MCP integrations like dependencies that need periodic review.",
               plainExample: "Bookmark the official spec and re-check it before building a production server."
+            },
+            {
+              title: "Consent and visibility",
+              explanation: "Users should understand what an MCP-connected tool can access and what action it is about to take.",
+              aiUseCase: "Show risky tool actions before execution and require approval where needed.",
+              plainExample: "A file server should not silently expose private folders to every agent."
             }
           ],
           commonMistakes: [
@@ -2358,20 +2382,20 @@ class TicketRoute(BaseModel):
             { mistake: "Ignoring auth and permissions", better: "Design access control per server and tool" },
             { mistake: "Assuming the spec is frozen", better: "Revisit MCP docs as it evolves" }
           ],
-          checklist: ["Explain MCP's purpose", "Differentiate client and server", "Compare stdio and HTTP transports", "Plan auth and permissions"]
+          checklist: ["Explain MCP's purpose", "Differentiate client and server", "Compare stdio and HTTP transports", "Plan consent, auth, and permissions"]
         }
       },
       {
         n: "5.4",
-        title: "The ReAct pattern",
-        items: ["Reasoning + Acting loop", "Thought → action → observation → thought", "Why \"thinking\" models exist", "When to force ReAct vs let the model decide"],
+        title: "Agent Execution Patterns: ReAct and Tool Loops",
+        items: ["Reasoning + acting loop", "Action → observation → next decision", "When explicit action-observation loops improve reliability", "When a planning model helps choose tools", "When simple tool calling is enough"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
           status: "Required",
           goal: "Understand the reasoning-action-observation loop behind many practical agents.",
           whyIntro: "ReAct is the basic shape of tool-using agents. You will use it when you are:",
-          conceptsTitle: "ReAct Pattern",
+          conceptsTitle: "Agent Execution Patterns",
           whyItMatters: ["Planning tool calls", "Using observations", "Debugging loops", "Choosing agent control flow"],
           concepts: [
             {
@@ -2387,14 +2411,14 @@ class TicketRoute(BaseModel):
               plainExample: "A search tool should return top chunks and sources, not a vague 'found results'."
             },
             {
-              title: "Thinking models",
-              explanation: "Reasoning models can perform harder planning, but they still need good tools and guardrails.",
-              aiUseCase: "Use stronger reasoning for complex tool workflows, not for every simple lookup.",
-              plainExample: "A refund lookup does not need a high-cost reasoning model."
+              title: "Planning model vs simple tool call",
+              explanation: "A planning model can help choose steps for complex workflows, but many tasks only need one direct tool call.",
+              aiUseCase: "Use explicit planning when tools depend on previous observations or when the workflow is high-risk.",
+              plainExample: "A multi-system incident review may need planning; a single order lookup does not."
             },
             {
-              title: "When to force ReAct",
-              explanation: "Use explicit ReAct loops when you need inspectable steps. Let the model decide when the task is simple and low-risk.",
+              title: "When to force tool loops",
+              explanation: "Use explicit action-observation loops when you need inspectable steps. Let the model decide when the task is simple and low-risk.",
               aiUseCase: "Use explicit loops for regulated, high-impact, or hard-to-debug workflows.",
               plainExample: "A financial workflow should show which tool result caused the final answer."
             }
@@ -2409,44 +2433,44 @@ class TicketRoute(BaseModel):
       },
       {
         n: "5.5",
-        title: "LangChain agents",
-        items: ["create_agent — model + tools + middleware + store", "@tool(parse_docstring=True) for auto schemas", "Parallel tool execution with asyncio.gather", "Structured outputs via Pydantic"],
+        title: "Framework Implementation Example: LangChain/LangGraph",
+        items: ["Core agent loop: model, tools, instructions, and state", "Tool declaration and schema generation", "Middleware for logging, permissions, and retries", "State persistence and checkpointing", "LangChain/LangGraph as one implementation example"],
         detail: {
           duration: "75–90 min",
           level: "Intermediate",
           status: "Required",
-          showCodeLabel: "Show LangChain example",
-          hideCodeLabel: "Hide LangChain example",
-          codeLabel: "LangChain example",
-          goal: "Build a simple LangChain agent with typed tools, structured output, and predictable execution.",
-          whyIntro: "LangChain is common in agent prototypes and production stacks. You will use it when you are:",
-          conceptsTitle: "LangChain Agent Basics",
-          whyItMatters: ["Building tool agents", "Generating tool schemas", "Using middleware", "Returning typed outputs"],
+          showCodeLabel: "Show framework example",
+          hideCodeLabel: "Hide framework example",
+          codeLabel: "Framework example",
+          goal: "Use an agent framework as an implementation detail without confusing framework APIs with core agent concepts.",
+          whyIntro: "Frameworks help with wiring, state, tools, and tracing. You will use them when you are:",
+          conceptsTitle: "Framework Implementation Basics",
+          whyItMatters: ["Building tool agents", "Generating tool schemas", "Using middleware", "Persisting state"],
           concepts: [
             {
-              title: "create_agent",
-              explanation: "create_agent combines a model, tools, instructions, middleware, and optional state or store.",
+              title: "Core agent loop",
+              explanation: "Most frameworks combine a model, tools, instructions, state, and execution control.",
               aiUseCase: "Build a single agent that can search docs, call APIs, or route user requests.",
               plainExample: "Give the agent a model and a search tool, then ask it to answer from documents."
             },
             {
-              title: "Tool decorators",
-              explanation: "Decorators can turn normal Python functions into model-callable tools with schemas.",
+              title: "Tool declaration",
+              explanation: "Frameworks can turn normal functions into model-callable tools with schemas.",
               aiUseCase: "Expose focused functions without hand-writing every JSON schema.",
               plainExample: "A function named get_order_status becomes a tool the model can call.",
-              code: `@tool(parse_docstring=True)\ndef get_order_status(order_id: str) -> dict:\n    \"\"\"Look up one order by ID.\"\"\"\n    return {\"order_id\": order_id, \"status\": \"shipped\"}`
+              code: `def get_order_status(order_id: str) -> dict:\n    \"\"\"Look up one order by ID.\"\"\"\n    return {\"order_id\": order_id, \"status\": \"shipped\"}\n\n# A framework can expose this function as a typed agent tool.`
             },
             {
-              title: "Parallel tool execution",
-              explanation: "Independent tool calls can run concurrently to reduce latency.",
-              aiUseCase: "Search docs, fetch user profile, and query account status at the same time when they do not depend on each other.",
-              plainExample: "Three slow calls in parallel can feel like one slow call."
+              title: "Middleware",
+              explanation: "Middleware adds cross-cutting behavior such as logging, retries, permission checks, rate limits, and tracing.",
+              aiUseCase: "Keep safety and observability consistent across tools and model calls.",
+              plainExample: "Every tool call can be checked for user permission before it runs."
             },
             {
-              title: "Pydantic outputs",
-              explanation: "Typed output models make agent results easier to validate and use in code.",
-              aiUseCase: "Return final answers, citations, confidence, and next actions with a predictable shape.",
-              plainExample: "The UI can render citations because the agent always returns a citations array."
+              title: "State and checkpointing",
+              explanation: "Long-running agents need durable state so they can pause, resume, and recover from failures.",
+              aiUseCase: "Persist tool results, approval state, and workflow progress.",
+              plainExample: "A support workflow can wait for human approval and continue later."
             }
           ],
           commonMistakes: [
@@ -2454,7 +2478,7 @@ class TicketRoute(BaseModel):
             { mistake: "No typed final output", better: "Use schemas for important results" },
             { mistake: "Parallelizing dependent calls", better: "Only run independent tools concurrently" }
           ],
-          checklist: ["Create a simple agent", "Decorate tools", "Use typed outputs", "Know when parallel tool calls help"]
+          checklist: ["Explain the core agent loop", "Declare typed tools", "Use middleware intentionally", "Persist state when workflows need it"]
         }
       },
       {
@@ -2505,16 +2529,16 @@ class TicketRoute(BaseModel):
       },
       {
         n: "5.7",
-        title: "Tool permissions and least privilege",
-        items: ["Read-only vs write tools — separate them at the schema and IAM level", "Allow-lists for tables, directories, domains, and API operations", "Per-tool timeouts, max retries, max spend, and max records touched", "Audit logs for every tool call: input, output, actor, trace ID"],
+        title: "Tool Security, Consent, and Authorization",
+        items: ["Read-only vs write tools — separate them at the schema and IAM level", "Allow-lists for tables, directories, domains, and API operations", "Explicit user consent for destructive or external actions", "Tool output injection and untrusted tool descriptions", "Audit logs with provenance for every tool call"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Limit what each tool can do so agent mistakes are contained.",
-          whyIntro: "Least privilege is how agents stay useful without becoming dangerous. You will apply it when you are:",
-          conceptsTitle: "Tool Permissions",
-          whyItMatters: ["Protecting data", "Limiting blast radius", "Auditing actions", "Preventing runaway costs"],
+          goal: "Limit what each tool can access, require consent for risky actions, and make every tool result auditable.",
+          whyIntro: "Tool security is how agents stay useful without becoming dangerous. You will apply it when you are:",
+          conceptsTitle: "Tool Security",
+          whyItMatters: ["Protecting data", "Limiting blast radius", "Auditing actions", "Preventing tool injection"],
           concepts: [
             {
               title: "Read vs write tools",
@@ -2529,24 +2553,30 @@ class TicketRoute(BaseModel):
               plainExample: "A SQL tool can query approved views only, not every database table."
             },
             {
-              title: "Limits and budgets",
-              explanation: "Each tool should have timeouts, retries, max records, max spend, and max calls per request.",
-              aiUseCase: "Stop loops, runaway queries, and expensive mistakes.",
-              plainExample: "A search tool should not retrieve 10,000 records because the model asked nicely."
+              title: "Consent and authorization",
+              explanation: "Users should see and approve destructive, external, expensive, or permission-sensitive actions before they run.",
+              aiUseCase: "Require consent before sending email, writing records, deleting files, or purchasing services.",
+              plainExample: "Show the exact email body and recipients before sending."
             },
             {
-              title: "Audit logs",
-              explanation: "Log every tool call with input, output summary, actor, timestamp, and trace ID.",
-              aiUseCase: "Debug incidents and prove what the agent did.",
-              plainExample: "You should know exactly which tool call changed a customer record."
+              title: "Tool output injection",
+              explanation: "Tool results and tool descriptions can contain untrusted instructions that try to redirect the agent.",
+              aiUseCase: "Treat retrieved pages, emails, docs, and third-party tool text as data, not instructions.",
+              plainExample: "A web page saying 'ignore previous instructions' should not control the agent."
+            },
+            {
+              title: "Provenance and audit logs",
+              explanation: "Log every tool call with input, output summary, source/provenance, actor, timestamp, and trace ID.",
+              aiUseCase: "Debug incidents and prove what the agent did and what data it relied on.",
+              plainExample: "You should know which source record caused a customer update."
             }
           ],
           commonMistakes: [
             { mistake: "One powerful admin tool", better: "Split tools by permission and risk" },
-            { mistake: "No hard limits", better: "Enforce caps inside tools" },
+            { mistake: "Trusting tool text as instructions", better: "Treat tool outputs and descriptions as untrusted data" },
             { mistake: "Logs without trace IDs", better: "Correlate tool calls with model traces and user sessions" }
           ],
-          checklist: ["Separate read and write tools", "Use allow-lists", "Set per-tool limits", "Log every tool call"]
+          checklist: ["Separate read and write tools", "Use allow-lists", "Require consent for risky actions", "Log provenance for every tool call"]
         }
       },
       {
@@ -2597,13 +2627,13 @@ class TicketRoute(BaseModel):
       },
       {
         n: "5.9",
-        title: "Computer use & app SDKs — agents with eyes and a mouse",
-        items: ["Anthropic Computer Use — agent takes screenshots and drives a desktop/browser", "OpenAI Operator / Apps SDK — agent runs inside ChatGPT or controls a browser tab", "Browser-automation agents (Playwright + LLM, browser-use, Stagehand)", "When this is the right tool vs API integration", "Sandboxing, audit trails, and \"are you sure?\" gates — these agents can do real damage"],
+        title: "Computer-Use Agents, Browser Agents, and App SDKs",
+        items: ["Computer-use agents that observe screens and operate browsers/desktops", "Browser-automation agents with Playwright-style control", "App SDK and connector-style integrations", "API first; UI automation only when needed", "Fragility, sandboxing, audit trails, and approval gates"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Know when visual/browser agents are useful and how to control their risk.",
+          goal: "Know when visual/browser agents are useful, when APIs are better, and how to control their higher operational risk.",
           whyIntro: "Computer-use agents interact with real interfaces, so mistakes are visible and costly. You will use them when you are:",
           conceptsTitle: "Computer-Use Agent Basics",
           whyItMatters: ["Automating legacy UIs", "Testing apps", "Using browser workflows", "Adding safety gates"],
@@ -2625,6 +2655,12 @@ class TicketRoute(BaseModel):
               explanation: "APIs are usually faster, safer, cheaper, and easier to test than UI automation.",
               aiUseCase: "Use computer use only when APIs are missing, incomplete, or unsuitable.",
               plainExample: "Call the CRM API if it exists; use browser control only for gaps."
+            },
+            {
+              title: "Fragility and operational risk",
+              explanation: "UI workflows break when buttons move, pages load slowly, auth changes, or visual state is misread.",
+              aiUseCase: "Reserve browser agents for workflows where the risk and maintenance cost are acceptable.",
+              plainExample: "A dashboard redesign can break a browser agent even when the underlying data is unchanged."
             },
             {
               title: "Sandbox and approval",

@@ -716,6 +716,28 @@ function App() {
                   <span className="capstone__proves-label">Proves</span>
                   {c.proves}
                 </div>
+                {c.deliverables && c.deliverables.length > 0 && (
+                  <div className="capstone__detail-block">
+                    <div className="capstone__build-label">Ship checklist</div>
+                    {c.deliverables.map((item, i) => (
+                      <div key={i} className="capstone__detail-item">
+                        <span className="capstone__detail-mark">✓</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {c.acceptance && c.acceptance.length > 0 && (
+                  <div className="capstone__detail-block">
+                    <div className="capstone__build-label">Acceptance checks</div>
+                    {c.acceptance.map((item, i) => (
+                      <div key={i} className="capstone__detail-item">
+                        <span className="capstone__detail-mark">→</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
           ))}

@@ -3846,6 +3846,16 @@ window.CAPSTONES = [
       "FastAPI Q&A endpoint with citation-backed answers"
     ],
     stack: ["Docling", "Pinecone", "Neo4j", "Docker", "ECS Fargate", "DynamoDB", "S3", "Bedrock embeddings", "LangSmith", "GitHub Actions"],
+    deliverables: [
+      "Runnable ingestion worker with retry-safe document states",
+      "RAG API endpoint with citations and retrieved-source inspection",
+      "Eval report showing retrieval metrics and RAG Triad scores"
+    ],
+    acceptance: [
+      "At least 50 golden Q&A cases with expected source chunks",
+      "Failed document jobs can be retried without duplicate chunks",
+      "Every answer returns source metadata or a safe no-answer response"
+    ],
     proves: "You can build production RAG, not a Streamlit demo."
   },
   {
@@ -3863,6 +3873,16 @@ window.CAPSTONES = [
       "Benchmarked on a golden NLQ test set, target 85%+ accuracy, with trace links for failures"
     ],
     stack: ["LangChain", "LangGraph", "LangSmith", "AgentCore", "RDS PostgreSQL", "FastAPI", "Streamlit", "Docker", "Bedrock"],
+    deliverables: [
+      "LangGraph workflow for planner, SQL writer, validator, executor, and explainer",
+      "Read-only analytics API with query validation and approval gates",
+      "Evaluation dashboard with natural-language questions, generated SQL, and trace links"
+    ],
+    acceptance: [
+      "85%+ accuracy on the golden NLQ test set",
+      "Unsafe SQL, writes, and high-row queries are blocked before execution",
+      "Every failed run can be debugged from a trace and state snapshot"
+    ],
     proves: "You can orchestrate multiple specialised agents safely against real production data."
   },
   {
@@ -3879,7 +3899,17 @@ window.CAPSTONES = [
       "Deployed on AWS with structured logs, traces, metrics, regression tests in CI, semantic cache, cost dashboard"
     ],
     stack: ["LangChain", "LangGraph", "Neo4j + Cypher", "Pinecone", "Bedrock + AgentCore + Lambda", "S3", "GitHub Actions", "LangSmith", "MLflow"],
-    proves: "You can ship an agent into a regulated domain without it killing anyone (or your career)."
+    deliverables: [
+      "ClinicalTrials.gov ingestion flow with structured trial entities and document chunks",
+      "Hybrid graph plus vector retrieval API with evidence-backed answers",
+      "Production deployment with guardrails, traces, evals, and cost dashboard"
+    ],
+    acceptance: [
+      "Every factual claim includes source evidence",
+      "Medical/legal disclaimer and refusal rules trigger on unsafe requests",
+      "CI runs regression tests for retrieval, guardrails, and structured outputs"
+    ],
+    proves: "You can ship an agent into a regulated domain with evidence, guardrails, and operational control."
   }
 ];
 

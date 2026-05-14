@@ -1353,6 +1353,27 @@ body::before {
   font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--c-rust); margin-right: 10px;
 }
+.capstone__detail-block {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.capstone__detail-item {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  padding: 9px 0;
+  color: var(--fg-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.capstone__detail-mark {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--c-amber);
+  font-weight: 600;
+  padding-top: 2px;
+}
 
 .footer {
   padding: 12vh 8vw 120px;

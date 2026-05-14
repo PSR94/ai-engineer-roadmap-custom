@@ -139,6 +139,8 @@ function ModuleDetail({ section }) {
 function PhaseTabBox({ phase }) {
   const [activeTab, setActiveTab] = useState(0);
   const section = phase.sections[activeTab];
+  const hasPrev = activeTab > 0;
+  const hasNext = activeTab < phase.sections.length - 1;
   return (
     <div className="tabbox">
       <div className="tabbox__tabs" role="tablist">
@@ -169,8 +171,71 @@ function PhaseTabBox({ phase }) {
               </ul>
             </React.Fragment>
           )}
+          <div className="module-nav" aria-label="Module navigation">
+            <button
+              type="button"
+              className="module-nav__button"
+              disabled={!hasPrev}
+              onClick={() => setActiveTab(t => Math.max(0, t - 1))}>
+              <span aria-hidden="true">←</span>
+              Previous
+            </button>
+            <div className="module-nav__status">
+              Module {activeTab + 1} of {phase.sections.length}
+            </div>
+            <button
+              type="button"
+              className="module-nav__button module-nav__button--next"
+              disabled={!hasNext}
+              onClick={() => setActiveTab(t => Math.min(phase.sections.length - 1, t + 1))}>
+              Next
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MobilePhaseNav({ activePhase, visible, onJumpPhase }) {
+  const [open, setOpen] = useState(false);
+  const phase = window.ROADMAP[activePhase] || window.ROADMAP[0];
+  const progress = ((activePhase + 1) / window.ROADMAP.length) * 100;
+
+  useEffect(() => {
+    if (!visible) setOpen(false);
+  }, [visible]);
+
+  return (
+    <div className={`mobile-phase-nav ${visible ? 'visible' : ''} ${open ? 'open' : ''}`}>
+      <button
+        type="button"
+        className="mobile-phase-nav__pill"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls="mobile-phase-list">
+        <span className="mobile-phase-nav__label">Phase {activePhase + 1} of {window.ROADMAP.length}</span>
+        <span className="mobile-phase-nav__title">{phase.short}</span>
+        <span className="mobile-phase-nav__chevron" aria-hidden="true">{open ? '×' : '↑'}</span>
+      </button>
+      <div className="mobile-phase-nav__bar" aria-hidden="true">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+      {open ? (
+        <div className="mobile-phase-nav__sheet" id="mobile-phase-list">
+          {window.ROADMAP.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              className={`mobile-phase-nav__item ${i === activePhase ? 'active' : ''}`}
+              onClick={() => { onJumpPhase(i); setOpen(false); }}>
+              <span>{String(p.id).padStart(2, '0')}</span>
+              <strong>{p.short}</strong>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -316,6 +381,7 @@ function CommandPalette({ open, onClose, onJumpPhase }) {
 
 function App() {
   const [dockVisible, setDockVisible] = useState(false);
+  const [activePhase, setActivePhase] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
@@ -397,6 +463,7 @@ function App() {
       }
       if (active !== lastActiveIdx.current) {
         lastActiveIdx.current = active;
+        setActivePhase(active);
         dockNodeRefs.current.forEach((node, i) => {
           if (!node) return;
           const isActive = i === active;
@@ -588,6 +655,11 @@ function App() {
           <div className="dock__progress-dot" ref={progressDotRef} />
         </div>
       </div>
+
+      <MobilePhaseNav
+        activePhase={activePhase}
+        visible={dockVisible}
+        onJumpPhase={scrollToPhase} />
 
       {/* PHASES */}
       <section className="phases">

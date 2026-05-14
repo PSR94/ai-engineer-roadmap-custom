@@ -3501,16 +3501,16 @@ class TicketRoute(BaseModel):
     title: "Guardrails & LLMOps",
     short: "Guardrails + LLMOps",
     color: "mustard",
-    weeks: "Weeks 23–24",
-    weeksDetail: "2 weeks · 6 modules",
+    weeks: "Weeks 23–25",
+    weeksDetail: "3 weeks · 6 modules",
     difficulty: 3,
-    summary: "You know what to build. Now make it not embarrass you in production — measure failure, catch it before users do, and prove the agent is improving release-over-release.",
-    endState: "You can put a number on how often your agent fails, and ship it anyway with confidence.",
+    summary: "Measure failure, catch it before users do, enforce safeguards, and prove the agent improves release-over-release.",
+    endState: "You can quantify failure rates, enforce safeguards, and make an evidence-based shipping decision.",
     sections: [
       {
         n: "8.1",
-        title: "Three-layer guardrail architecture",
-        items: ["Input Guardrails (gateway, <1ms, deterministic): prompt-injection regex, PII redaction, out-of-domain rejection, toxic filter — code-based, never LLM", "Output Guardrails (LLM-judge OK): faithfulness, contradiction check, medical/legal disclaimers when confidence < threshold, hard-fail to safe fallback", "Action Guardrails (inside tools, pure functions): max retries, max tool calls per request, query validation, read-only DB, top_k caps"],
+        title: "Guardrail Architecture: Input, Output, Action",
+        items: ["Input guardrails: prefer deterministic and low-latency checks where possible; use model-based moderation selectively when risk requires it", "Output guardrails: faithfulness, contradiction checks, refusal quality, disclaimers, safe fallback", "Action guardrails: max retries, max tool calls, query validation, read-only DB, top_k caps"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -3523,7 +3523,7 @@ class TicketRoute(BaseModel):
             {
               title: "Input guardrails",
               explanation: "Input guardrails run before the model and catch prompt injection, PII, unsupported topics, toxic content, or obvious abuse.",
-              aiUseCase: "Use fast deterministic checks at the gateway before spending tokens.",
+              aiUseCase: "Prefer fast deterministic checks at the gateway, and add model-based moderation only when the risk profile justifies it.",
               plainExample: "Reject a request that asks the agent to reveal hidden system instructions."
             },
             {
@@ -3555,13 +3555,13 @@ class TicketRoute(BaseModel):
       },
       {
         n: "8.2",
-        title: "AWS Bedrock Guardrails",
-        items: ["Contextual grounding", "Automated reasoning checks", "Harmful content filtering", "Topic blocking", "When managed guardrails are enough vs custom"],
+        title: "Managed Guardrails and Policy Systems",
+        items: ["AWS Bedrock Guardrails as one vendor example", "Content filters, denied topics, word filters, and sensitive information filters", "Contextual grounding and automated reasoning checks", "When managed guardrails are enough vs custom policy systems"],
         detail: {
           duration: "45–60 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Know what managed guardrails can cover and where custom checks are still needed.",
+          goal: "Know what managed guardrails and policy systems can cover, and where custom checks are still needed.",
           whyIntro: "Managed guardrails can speed up production hardening, but they do not replace system design. You will use them when you are:",
           conceptsTitle: "Managed Guardrails",
           whyItMatters: ["Filtering harmful content", "Blocking topics", "Checking grounding", "Reducing custom safety code"],
@@ -3596,7 +3596,7 @@ class TicketRoute(BaseModel):
             { mistake: "No test cases for guardrails", better: "Create adversarial and regression tests" },
             { mistake: "Blocking without explanation", better: "Return clear safe messages and next steps" }
           ],
-          checklist: ["Explain contextual grounding", "Use topic/content filters", "Know managed guardrail limits", "Pair managed and custom checks"]
+          checklist: ["Explain contextual grounding", "Use topic/content/sensitive-data filters", "Know managed guardrail limits", "Pair managed and custom checks"]
         }
       },
       {
@@ -3647,7 +3647,7 @@ class TicketRoute(BaseModel):
       },
       {
         n: "8.4",
-        title: "LLMOps — observability",
+        title: "Observability: Traces, Cost, Latency, Failures",
         items: ["LangSmith / LangFuse for traces", "Token cost dashboards", "Latency percentiles (p50, p95, p99)", "Failure rate by tool, by route, by model", "Trace sampling and redaction so observability does not leak user data"],
         detail: {
           duration: "60–75 min",
@@ -3697,8 +3697,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "8.5",
-        title: "LLMOps — evaluation in production",
-        items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality", "Eval tests for refusals, tool permissions, structured outputs, and human-approval paths"],
+        title: "Production Evals: Regression, A/B, Feedback Loops",
+        items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Task success rate and cost per successful outcome", "Tool-use success, hallucination/factuality, refusal quality, and safety violation rate", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -3706,8 +3706,14 @@ class TicketRoute(BaseModel):
           goal: "Run evals before and after deployment so prompt, model, retrieval, and safety changes do not regress silently.",
           whyIntro: "Production LLM quality changes over time. You will use production evals when you are:",
           conceptsTitle: "Production Evaluation",
-          whyItMatters: ["Preventing regressions", "Testing prompt changes", "Detecting retrieval drift", "Measuring safety behavior"],
+          whyItMatters: ["Preventing regressions", "Testing prompt changes", "Detecting drift", "Measuring task success"],
           concepts: [
+            {
+              title: "Evaluation taxonomy",
+              explanation: "Production evals should measure task success, tool-use success, factuality, refusal quality, safety violation rate, latency, and cost per successful outcome.",
+              aiUseCase: "Evaluate the whole product behavior, not only final text quality.",
+              plainExample: "A support agent can be fluent but still fail if it calls the wrong tool or costs too much per solved ticket."
+            },
             {
               title: "Golden datasets in CI",
               explanation: "A golden dataset is a small representative set of test cases that must keep passing across changes.",
@@ -3738,72 +3744,72 @@ class TicketRoute(BaseModel):
             { mistake: "Ignoring production feedback", better: "Turn failures into new eval cases" },
             { mistake: "Quality evals only", better: "Add safety, permission, and structured-output evals" }
           ],
-          checklist: ["Create golden datasets", "Run evals in CI", "A/B test prompt/model changes", "Add safety eval cases"]
+          checklist: ["Define broad eval metrics", "Create golden datasets", "Run evals in CI", "A/B test prompt/model changes"]
         }
       },
       {
         n: "8.6",
-        title: "Security basics for AI apps",
-        items: ["API keys, secrets, and environment variables — never commit credentials", "Authentication vs authorization: who are you, and what can you do?", "Rate limits, quotas, abuse prevention, and spend caps", "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk"],
+        title: "Red-Teaming, Incident Response, and Safe Rollbacks",
+        items: ["Adversarial and jailbreak test sets", "Prompt injection red-team cases", "Abuse monitoring and alerting", "Incident playbooks and rollback triggers", "Safe fallback behavior when quality or safety degrades"],
         detail: {
           duration: "60–75 min",
-          level: "Beginner",
+          level: "Intermediate",
           status: "Required",
-          goal: "Protect AI apps from common security failures around secrets, access control, abuse, and prompt-driven attacks.",
-          whyIntro: "AI apps are still web apps, plus model-specific attack surfaces. You will use these basics when you are:",
-          conceptsTitle: "AI App Security Basics",
-          whyItMatters: ["Protecting secrets", "Enforcing access", "Preventing abuse", "Reducing prompt-injection damage"],
+          goal: "Prepare for unsafe behavior, abuse, prompt injection, and bad releases before they become production incidents.",
+          whyIntro: "Operational safety is what happens after the first guardrail fails. You will use this when you are:",
+          conceptsTitle: "Operational Safety",
+          whyItMatters: ["Finding jailbreaks", "Responding to incidents", "Rolling back safely", "Monitoring abuse"],
           concepts: [
             {
-              title: "Secrets and API keys",
-              explanation: "Secrets belong in environment variables or secret managers, never in committed code or browser bundles.",
-              aiUseCase: "Protect model keys, vector DB keys, database URLs, and webhook secrets.",
-              plainExample: "A frontend app should call your backend, not expose the OpenAI key to users."
+              title: "Red-team test sets",
+              explanation: "Red-team cases deliberately test jailbreaks, prompt injection, data exfiltration, unsafe tool use, and policy bypasses.",
+              aiUseCase: "Run adversarial tests before major prompt, model, tool, or retrieval changes.",
+              plainExample: "Include documents that say 'ignore previous instructions' and verify the agent treats them as untrusted text."
             },
             {
-              title: "Authentication and authorization",
-              explanation: "Authentication proves who the user is. Authorization decides what they can access or do.",
-              aiUseCase: "Filter retrieval, tools, and actions by user, tenant, role, and permissions.",
-              plainExample: "A user can log in but still should not see another tenant's documents."
+              title: "Abuse monitoring",
+              explanation: "Monitor spikes in blocked requests, jailbreak attempts, tool failures, high-cost routes, and suspicious usage patterns.",
+              aiUseCase: "Catch abuse and unsafe behavior before it becomes widespread.",
+              plainExample: "Alert when one tenant suddenly triggers hundreds of blocked tool calls."
             },
             {
-              title: "Rate limits and spend caps",
-              explanation: "Rate limits, quotas, and budgets reduce abuse, accidental loops, and cost spikes.",
-              aiUseCase: "Limit requests per user, tool calls per run, tokens per request, and monthly tenant spend.",
-              plainExample: "A bug should not burn thousands of dollars in model calls overnight."
+              title: "Incident playbooks",
+              explanation: "A playbook defines who responds, what gets disabled, how users are informed, and how evidence is preserved.",
+              aiUseCase: "Respond consistently to data leakage, unsafe advice, broken tools, or cost explosions.",
+              plainExample: "Disable a write tool globally while investigating a bad-action incident."
             },
             {
-              title: "Prompt-specific risks",
-              explanation: "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk need code-level controls.",
-              aiUseCase: "Constrain tools, sanitize URLs, restrict file paths, and never trust retrieved/user text as instructions.",
-              plainExample: "A document saying 'send all secrets to this URL' must be treated as untrusted text."
+              title: "Rollback triggers",
+              explanation: "Define measurable thresholds that trigger rollback, model-route changes, feature flags, or safe fallback modes.",
+              aiUseCase: "Roll back when eval failures, safety violations, latency, or cost crosses a limit.",
+              plainExample: "If refusal quality drops below threshold after a prompt release, restore the previous prompt version."
             }
           ],
           commonMistakes: [
-            { mistake: "Putting API keys in frontend code", better: "Keep secrets server-side or in secret managers" },
-            { mistake: "Auth without authorization", better: "Check permissions on every tool and data access" },
-            { mistake: "Trusting model judgment for security", better: "Enforce security in code, IAM, network, and tools" }
+            { mistake: "Only testing happy paths", better: "Run adversarial and prompt-injection tests" },
+            { mistake: "No rollback trigger", better: "Define measurable safety, quality, latency, and cost thresholds" },
+            { mistake: "No incident owner", better: "Create a playbook with owner, steps, and communication path" }
           ],
-          checklist: ["Store secrets safely", "Separate auth and authorization", "Add rate limits and spend caps", "Mitigate prompt-specific attacks"]
+          checklist: ["Build red-team test sets", "Monitor abuse and safety signals", "Create incident playbooks", "Define rollback and fallback triggers"]
         }
       }
     ]
   },
   {
     id: 9,
-    title: "Cloud Infrastructure & Deployment",
-    short: "Cloud + Deployment",
+    title: "AWS Infrastructure & Deployment for AI Agents",
+    short: "AWS + Deployment",
     color: "indigo",
-    weeks: "Weeks 25–26",
-    weeksDetail: "2 weeks · 8 modules",
+    weeks: "Weeks 26–29",
+    weeksDetail: "4 weeks · 8 modules",
     difficulty: 3,
-    summary: "The final mile. Minimum AWS to make everything earlier deployable, plus how to actually put an agent in production and keep costs sane.",
+    summary: "AWS-first deployment literacy, not cloud mastery: enough infrastructure to ship agents, observe them, and keep costs sane.",
     endState: "You can take any system you built in earlier phases, dockerize it, deploy to ECS Fargate behind API Gateway, manage secrets, stream tokens to a chat UI, load-test it, and watch the cost dashboard move only when it should.",
     sections: [
       {
         n: "9.1",
-        title: "Storage & data",
-        items: ["S3 — durable object storage, document lakes", "RDS PostgreSQL — managed relational DB for agent state", "DynamoDB — KV state for ingestion pipelines"],
+        title: "Storage, Databases, and State",
+        items: ["S3 — durable object storage and document lakes", "RDS PostgreSQL — managed relational DB for agent state", "DynamoDB — key-value state for ingestion pipelines", "State boundaries: documents, metadata, jobs, permissions, traces, eval artifacts"],
         detail: {
           duration: "45–60 min",
           level: "Beginner",
@@ -3848,8 +3854,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "9.2",
-        title: "Compute",
-        items: ["Lambda — serverless event-driven flows", "ECS Fargate — serverless containers for long-running agents", "ECR — container registry"],
+        title: "Compute: Containers, Serverless, and Runtime Trade-offs",
+        items: ["Lambda — serverless event-driven flows", "ECS Fargate — serverless containers for long-running agents", "ECR — container registry", "Docker packaging for reproducible services", "Runtime trade-offs for APIs, workers, streaming, and long-running tasks"],
         detail: {
           duration: "45–60 min",
           level: "Beginner",
@@ -3859,6 +3865,12 @@ class TicketRoute(BaseModel):
           conceptsTitle: "Compute Options",
           whyItMatters: ["Running APIs", "Processing jobs", "Deploying containers", "Scaling workers"],
           concepts: [
+            {
+              title: "Docker packaging",
+              explanation: "Docker packages your app, dependencies, command, health behavior, and runtime assumptions into a reproducible image.",
+              aiUseCase: "Run FastAPI agents, background workers, and eval jobs consistently across local dev, CI, and production.",
+              plainExample: "The same image can run in staging and production."
+            },
             {
               title: "Lambda",
               explanation: "Lambda is serverless compute for short event-driven tasks.",
@@ -3894,8 +3906,8 @@ class TicketRoute(BaseModel):
       },
       {
         n: "9.3",
-        title: "Networking & access",
-        items: ["VPC, subnets, security groups (just enough not to break)", "IAM roles and policies", "API Gateway for exposing endpoints"],
+        title: "Networking, IAM, Secrets, and API Exposure",
+        items: ["VPC, subnets, security groups (just enough not to break)", "IAM roles and least-privilege policies", "AWS Secrets Manager for runtime credentials", "API Gateway for exposing endpoints", "Gateway throttling before expensive model work"],
         detail: {
           duration: "60–75 min",
           level: "Beginner",
@@ -3924,6 +3936,12 @@ class TicketRoute(BaseModel):
               plainExample: "An ingestion worker can read raw documents but cannot delete the whole bucket."
             },
             {
+              title: "Secrets management",
+              explanation: "Secrets Manager stores credentials and injects them into runtime without committing them to code.",
+              aiUseCase: "Protect model keys, DB passwords, webhook secrets, and provider tokens.",
+              plainExample: "Production reads model keys from a secret, not from Git."
+            },
+            {
               title: "API Gateway",
               explanation: "API Gateway exposes HTTP endpoints, handles routing, auth integration, throttling, and request limits.",
               aiUseCase: "Put rate limits and auth in front of model-backed APIs.",
@@ -3935,42 +3953,36 @@ class TicketRoute(BaseModel):
             { mistake: "Overbroad IAM", better: "Grant least-privilege roles per service" },
             { mistake: "No gateway limits", better: "Use throttling before requests reach expensive agents" }
           ],
-          checklist: ["Explain VPC/subnets", "Use security groups", "Create least-privilege IAM roles", "Expose endpoints through API Gateway"]
+          checklist: ["Explain VPC/subnets", "Use security groups", "Create least-privilege IAM roles", "Manage secrets and expose endpoints safely"]
         }
       },
       {
         n: "9.4",
-        title: "AI-specific services (and other clouds)",
-        items: ["AWS Bedrock — managed foundation models", "AWS AgentCore — production agent infrastructure", "Bedrock embeddings", "Equivalents on other clouds: GCP Vertex AI (Model Garden, Agent Builder) and Azure AI Foundry (model catalog, prompt flow) — same primitives, different SKUs"],
+        title: "AI Cloud Services: Bedrock/AgentCore and Cloud Equivalents",
+        items: ["AI cloud primitives: model serving, embeddings, agent runtime, memory, identity, observability, evaluations", "AWS Bedrock and AgentCore", "Azure AI Foundry", "GCP Vertex AI", "Same primitives, different SKUs"],
         detail: {
           duration: "45–60 min",
           level: "Beginner",
           status: "Required",
           goal: "Map core AI platform services across clouds so you can deploy models, agents, embeddings, and eval workflows.",
           whyIntro: "Cloud names differ, but the primitives repeat. You will use these services when you are:",
-          conceptsTitle: "AI Cloud Services",
+          conceptsTitle: "AI Cloud Primitives",
           whyItMatters: ["Calling managed models", "Using embeddings", "Deploying agents", "Comparing cloud offerings"],
           concepts: [
             {
-              title: "AWS Bedrock",
-              explanation: "Bedrock provides managed foundation models, embeddings, guardrails, and related AI platform capabilities.",
+              title: "Model serving and embeddings",
+              explanation: "Managed AI platforms provide model APIs, embedding APIs, guardrails, and related foundation-model services.",
               aiUseCase: "Use Bedrock when AWS-native governance, IAM, networking, and managed model access matter.",
               plainExample: "A regulated AWS app may prefer Bedrock because it fits existing cloud controls."
             },
             {
-              title: "Agent infrastructure",
-              explanation: "Agent services help host, orchestrate, secure, and observe production agent workflows.",
+              title: "Agent runtime and platform services",
+              explanation: "Agent platforms help host, orchestrate, secure, remember, evaluate, and observe production agent workflows.",
               aiUseCase: "Use when moving from local prototypes to managed production agents.",
               plainExample: "A deployed agent needs identity, tools, logs, permissions, and runtime controls."
             },
             {
-              title: "Embeddings services",
-              explanation: "Managed embedding APIs turn documents and queries into vectors for search.",
-              aiUseCase: "Use with vector stores, RAG pipelines, semantic cache, and deduplication.",
-              plainExample: "Embed every chunk before indexing it for retrieval."
-            },
-            {
-              title: "Other clouds",
+              title: "Provider equivalents",
               explanation: "Vertex AI and Azure AI Foundry expose similar primitives with different names, integrations, and pricing.",
               aiUseCase: "Translate concepts across cloud providers instead of memorizing one SKU list.",
               plainExample: "Model catalog, prompt flow, agent builder, and eval tools appear in most major clouds."
@@ -4036,40 +4048,40 @@ class TicketRoute(BaseModel):
       },
       {
         n: "9.6",
-        title: "Deployment & realtime delivery",
-        items: ["ECS Fargate task definitions", "API Gateway + ALB routing", "Secrets management with AWS Secrets Manager", "Environment promotion (dev → staging → prod)", "Streaming responses to chat UIs — SSE for one-way token streaming, WebSockets when you also need client → server messages mid-stream"],
+        title: "Realtime Delivery: SSE, WebSockets, Long-Running Tasks",
+        items: ["Streaming responses to chat UIs", "SSE for one-way token streaming", "WebSockets when client and server both send messages mid-stream", "Long-running task patterns for agents and document jobs", "Environment promotion (dev → staging → prod)"],
         detail: {
           duration: "75–90 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Deploy containerized AI services with secrets, environment promotion, routing, and realtime response delivery.",
-          whyIntro: "Deployment is where app design meets infrastructure reality. You will use these patterns when you are:",
-          conceptsTitle: "Deployment And Realtime",
-          whyItMatters: ["Deploying APIs", "Managing secrets", "Promoting environments", "Streaming model responses"],
+          goal: "Deliver model responses and long-running agent work through the right realtime and async patterns.",
+          whyIntro: "AI apps often need visible progress before all work is finished. You will use these patterns when you are:",
+          conceptsTitle: "Realtime Delivery",
+          whyItMatters: ["Streaming model responses", "Handling long tasks", "Supporting cancellation", "Promoting environments"],
           concepts: [
             {
-              title: "ECS task definitions",
-              explanation: "Task definitions describe container image, CPU, memory, environment variables, ports, health checks, and secrets.",
-              aiUseCase: "Deploy FastAPI agents and workers with predictable runtime settings.",
-              plainExample: "A worker task may need more memory than the API task."
+              title: "SSE for token streaming",
+              explanation: "Server-Sent Events are a simple fit for one-way token streaming from server to browser.",
+              aiUseCase: "Stream chat answers, status updates, and partial model output.",
+              plainExample: "A normal assistant answer can stream over SSE."
             },
             {
-              title: "Routing with API Gateway and ALB",
-              explanation: "API Gateway and load balancers route public traffic to private services and apply limits or auth.",
-              aiUseCase: "Expose chat, ingest, eval, and admin endpoints safely.",
-              plainExample: "Public users hit API Gateway, not the ECS task directly."
+              title: "WebSockets for bidirectional sessions",
+              explanation: "WebSockets fit workflows where the client and server both need to send messages during a run.",
+              aiUseCase: "Use for collaborative agent sessions, live controls, cancellation, or interactive tool approval.",
+              plainExample: "A browser agent session may need user messages mid-run."
             },
             {
-              title: "Secrets management",
-              explanation: "Secrets Manager stores credentials and injects them into runtime without committing them to code.",
-              aiUseCase: "Protect model keys, DB passwords, webhook secrets, and provider tokens.",
-              plainExample: "Production reads OPENAI_API_KEY from a secret, not from Git."
+              title: "Long-running tasks",
+              explanation: "Document ingestion, evaluations, and multi-step agents often need queues, workers, job IDs, and resumable status.",
+              aiUseCase: "Return a job ID quickly, then let workers process the slow path.",
+              plainExample: "Upload a PDF, show processing status, and notify when indexing finishes."
             },
             {
-              title: "SSE and WebSockets",
-              explanation: "SSE is good for one-way token streaming. WebSockets are better when client and server both need to send messages mid-stream.",
-              aiUseCase: "Use SSE for chat token streams and WebSockets for interactive sessions or cancellation-heavy workflows.",
-              plainExample: "A normal chat answer can stream over SSE; a collaborative agent session may need WebSockets."
+              title: "Environment promotion",
+              explanation: "Realtime features should still move through dev, staging, and production with smoke tests.",
+              aiUseCase: "Catch streaming, auth, and timeout problems before public users see them.",
+              plainExample: "Verify SSE works behind the staging gateway before production."
             }
           ],
           commonMistakes: [
@@ -4077,13 +4089,13 @@ class TicketRoute(BaseModel):
             { mistake: "Secrets in env files committed to Git", better: "Use managed secrets and runtime injection" },
             { mistake: "Using WebSockets for every stream", better: "Use SSE when one-way streaming is enough" }
           ],
-          checklist: ["Define ECS tasks", "Route through gateway/load balancer", "Use Secrets Manager", "Choose SSE vs WebSockets"]
+          checklist: ["Choose SSE vs WebSockets", "Use job patterns for long tasks", "Support status and cancellation", "Promote through environments"]
         }
       },
       {
         n: "9.7",
-        title: "CI/CD with GitHub Actions",
-        items: ["Run lint, type checks, unit tests, integration tests, and eval tests on every PR", "Build and push Docker images to ECR", "Deploy to staging automatically, production with manual approval", "Rollback strategy, release notes, and environment-specific secrets"],
+        title: "CI/CD and Infrastructure as Code",
+        items: ["Run lint, type checks, unit tests, integration tests, and eval tests on every PR", "Build and push Docker images to ECR", "Deploy to staging automatically, production with manual approval", "Declare infrastructure with Terraform, CDK, or CloudFormation", "Rollback strategy, release notes, and environment-specific secrets"],
         detail: {
           duration: "60–75 min",
           level: "Intermediate",
@@ -4091,10 +4103,10 @@ class TicketRoute(BaseModel):
           showCodeLabel: "Show workflow skeleton",
           hideCodeLabel: "Hide workflow skeleton",
           codeLabel: "GitHub Actions skeleton",
-          goal: "Automate tests, evals, image builds, and deployments so releases are repeatable and reviewable.",
+          goal: "Automate tests, evals, image builds, deployments, and infrastructure changes so releases are repeatable and reviewable.",
           whyIntro: "CI/CD prevents production changes from being a manual ritual. You will use it when you are:",
-          conceptsTitle: "CI/CD Basics",
-          whyItMatters: ["Testing every PR", "Running evals", "Building images", "Deploying safely"],
+          conceptsTitle: "CI/CD and IaC Basics",
+          whyItMatters: ["Testing every PR", "Running evals", "Building images", "Versioning infrastructure"],
           concepts: [
             {
               title: "PR checks",
@@ -4116,6 +4128,12 @@ class TicketRoute(BaseModel):
               plainExample: "Deploy to staging, run smoke tests, then approve production."
             },
             {
+              title: "Infrastructure as Code",
+              explanation: "Production infrastructure should be declared and versioned with tools like Terraform, CDK, or CloudFormation.",
+              aiUseCase: "Review changes to queues, databases, gateways, IAM roles, and ECS services before applying them.",
+              plainExample: "A pull request changes the ECS task memory setting instead of someone clicking in a console."
+            },
+            {
               title: "Rollback strategy",
               explanation: "A rollback plan defines how to return to a known-good image, prompt version, or model route.",
               aiUseCase: "Recover quickly from bad prompts, model changes, or broken deployments.",
@@ -4127,21 +4145,21 @@ class TicketRoute(BaseModel):
             { mistake: "Manual deployments only", better: "Automate build and deploy steps" },
             { mistake: "No rollback", better: "Keep previous image and prompt versions deployable" }
           ],
-          checklist: ["Run PR checks", "Run AI evals in CI", "Build and push Docker images", "Use staging, approval, and rollback"]
+          checklist: ["Run PR checks", "Run AI evals in CI", "Build and push Docker images", "Version infrastructure and rollback safely"]
         }
       },
       {
         n: "9.8",
-        title: "Production observability & cost control",
+        title: "Cost, Capacity, Autoscaling, and Load Testing",
         items: ["Structured logs with request IDs and trace IDs", "Metrics: request count, error rate, p95 latency, queue depth, token spend", "Alerts for tool failure spikes, cost anomalies, and eval regressions", "Semantic cache HIT rate as a KPI", "Model routing — cheap model for simple queries, expensive for complex", "Load testing with locust or k6 — agents fall over under concurrency long before the LLM does; rate-limit at the gateway, not the model"],
         detail: {
           duration: "75–90 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Operate an AI app with logs, metrics, alerts, cost controls, routing, caching, and load tests.",
+          goal: "Operate an AI app with service/runtime observability, autoscaling signals, cost controls, routing, caching, and load tests.",
           whyIntro: "Production AI apps fail through cost, latency, queues, tools, and bad routing. You will use this when you are:",
           conceptsTitle: "Production Operations",
-          whyItMatters: ["Controlling spend", "Finding failures", "Scaling safely", "Protecting user experience"],
+          whyItMatters: ["Controlling spend", "Finding runtime failures", "Scaling safely", "Protecting user experience"],
           concepts: [
             {
               title: "Structured logs and trace IDs",
@@ -4151,9 +4169,9 @@ class TicketRoute(BaseModel):
             },
             {
               title: "Metrics and alerts",
-              explanation: "Track request count, error rate, p95 latency, queue depth, token spend, tool failures, and eval regressions.",
-              aiUseCase: "Alert on cost spikes, broken tools, slow model calls, and retrieval quality drops.",
-              plainExample: "If tool failures jump from 1% to 20%, page the team before users report it."
+              explanation: "Track request count, error rate, p95 latency, queue depth, CPU, memory, container health, token spend, tool failures, and eval regressions.",
+              aiUseCase: "Separate service/runtime/cloud observability from Phase 8's model and agent quality observability.",
+              plainExample: "A slow answer might be a saturated worker, not a worse model."
             },
             {
               title: "Cache and routing KPIs",

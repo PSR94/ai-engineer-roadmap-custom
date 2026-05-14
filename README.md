@@ -44,7 +44,6 @@ http://localhost:8000/
 
 ```text
 index.html
-Roadmap.html
 app.jsx
 data.js
 styles.css

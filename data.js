@@ -2416,13 +2416,340 @@ assert build_context(["chunk one"]) == expected`
     summary: "The hardest conceptual phase. Easy to do badly, expensive when you do. Worth every hour of attention.",
     endState: "You can explain why your agent forgot what you said three turns ago, and fix it with the right memory layer instead of throwing more tokens at it.",
     sections: [
-      { n: "6.1", title: "The context window as working memory", items: ["Why agents \"forget\" mid-conversation", "Token budgeting per section", "The lost-in-the-middle problem", "Recency bias"] },
-      { n: "6.2", title: "Context structure — SYSTEM / CONTEXT / USER separation", items: ["What goes where", "@dynamic_prompt patterns", "Structural separation as a security defence against prompt injection", "Token budgets per section (e.g. SYSTEM=instructions, CONTEXT=retrieved data, ~2000 tokens each)"] },
-      { n: "6.3", title: "Short-term memory — session history", items: ["Sliding window of last N turns", "Message-pair preservation (don't split user from assistant)", "When to keep tool calls in history vs strip them"] },
-      { n: "6.4", title: "Semantic caching", items: ["FAISS IndexFlatIP for sub-millisecond cosine search", "Similarity thresholds (0.97 high-stakes, 0.88 general Q&A)", "Cache HIT skips everything downstream", "Daemon-thread writes so cache never blocks response"] },
-      { n: "6.5", title: "Episodic memory", items: ["LangChain's InMemoryStore", "LLM tags answers as EPISODIC: YES/NO so the model decides what's worth remembering", "Episodic hits enrich CONTEXT only — tools and LLM still run"] },
-      { n: "6.6", title: "Context compression", items: ["Trigger threshold (>3000 tokens)", "Keep last 10 messages verbatim", "LLM summarises the rest into a single compressed entry", "When compression destroys information"] },
-      { n: "6.7", title: "Long-term memory", items: ["User profiles, preferences, facts to persist", "Vector stores vs structured stores", "Managed memory layers — mem0 (open-source) and Zep (managed) — when to skip building this yourself", "When memory becomes a privacy problem (GDPR, right-to-be-forgotten flows)"] }
+      {
+        n: "6.1",
+        title: "The context window as working memory",
+        items: ["Why agents \"forget\" mid-conversation", "Token budgeting per section", "The lost-in-the-middle problem", "Recency bias"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Understand the context window as the agent's short-term working memory, not permanent knowledge.",
+          whyIntro: "Context is the budget every agent spends. You will use this when you are:",
+          conceptsTitle: "Context Window Basics",
+          whyItMatters: ["Budgeting tokens", "Debugging forgotten instructions", "Handling long chats", "Choosing what context to include"],
+          concepts: [
+            {
+              title: "Working memory",
+              explanation: "The context window is the text the model can use for the current response. Anything outside it is unavailable unless retrieved or summarized back in.",
+              aiUseCase: "Keep only the instructions, history, tool results, and retrieved context needed for the next answer.",
+              plainExample: "If an old user preference falls out of context, the model cannot use it."
+            },
+            {
+              title: "Token budgeting",
+              explanation: "Each request has a limited budget for system instructions, user input, history, retrieved context, tool results, and output.",
+              aiUseCase: "Reserve space for the answer instead of filling the entire window with context.",
+              plainExample: "A 16k-token window still needs room for the model's response."
+            },
+            {
+              title: "Lost in the middle",
+              explanation: "Models often use the beginning and end of long context better than the middle.",
+              aiUseCase: "Place critical rules and the most relevant evidence in strong positions.",
+              plainExample: "A safety rule buried in a long transcript may be ignored."
+            },
+            {
+              title: "Recency bias",
+              explanation: "Recent turns can dominate earlier instructions or facts if context is not structured carefully.",
+              aiUseCase: "Keep stable instructions in system context and user-specific facts in memory/context sections.",
+              plainExample: "A recent joke from the user should not override compliance rules."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Stuffing everything into context", better: "Budget context by priority" },
+            { mistake: "Assuming old chat is remembered", better: "Retrieve or summarize important facts back into context" },
+            { mistake: "Putting key rules in the middle", better: "Keep critical instructions visible and structured" }
+          ],
+          checklist: ["Explain context as working memory", "Budget tokens by section", "Account for lost-in-the-middle", "Handle recency bias"]
+        }
+      },
+      {
+        n: "6.2",
+        title: "Context structure — SYSTEM / CONTEXT / USER separation",
+        items: ["What goes where", "@dynamic_prompt patterns", "Structural separation as a security defence against prompt injection", "Token budgets per section (e.g. SYSTEM=instructions, CONTEXT=retrieved data, ~2000 tokens each)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show context template",
+          hideCodeLabel: "Hide context template",
+          codeLabel: "Context template",
+          goal: "Separate instructions, retrieved data, memory, and user input so the model can follow the right authority.",
+          whyIntro: "Context structure is reliability and security work. You will use it when you are:",
+          conceptsTitle: "Context Structure",
+          whyItMatters: ["Reducing prompt injection risk", "Making prompts readable", "Controlling token budgets", "Keeping data separate from instructions"],
+          concepts: [
+            {
+              title: "SYSTEM section",
+              explanation: "System content contains stable rules, behavior, safety limits, and output contracts.",
+              aiUseCase: "Keep non-negotiable app instructions away from user-provided text.",
+              plainExample: "A user document should not be able to rewrite the assistant's safety rules."
+            },
+            {
+              title: "CONTEXT section",
+              explanation: "Context contains retrieved chunks, memory facts, tool observations, and other data the model should use.",
+              aiUseCase: "Label context clearly so the model treats it as evidence, not instructions.",
+              plainExample: "Put handbook chunks under <context>, not mixed into the user question.",
+              code: `<system>\nAnswer only from context when policy facts are requested.\n</system>\n\n<context>\nRetrieved policy chunks go here.\n</context>\n\n<user>\nCan I expense my home monitor?\n</user>`
+            },
+            {
+              title: "USER section",
+              explanation: "The user section carries the user's request and should not be allowed to override higher-priority instructions.",
+              aiUseCase: "Defend against prompts like 'ignore previous instructions' inside user messages or documents.",
+              plainExample: "The user can ask a question, but cannot grant the agent new permissions."
+            },
+            {
+              title: "Dynamic prompts",
+              explanation: "Dynamic prompts assemble context based on route, user, tools, memory, and retrieved data.",
+              aiUseCase: "Build different prompt packages for support, coding, research, or approval flows.",
+              plainExample: "A billing route includes billing policy; a technical route includes runbooks."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Mixing data and instructions", better: "Use clear SYSTEM / CONTEXT / USER boundaries" },
+            { mistake: "No context budget", better: "Allocate approximate token budgets per section" },
+            { mistake: "Trusting retrieved text as instructions", better: "Treat retrieved text as untrusted evidence" }
+          ],
+          checklist: ["Separate system/context/user", "Use dynamic prompts", "Budget each context section", "Reduce prompt injection risk"]
+        }
+      },
+      {
+        n: "6.3",
+        title: "Short-term memory — session history",
+        items: ["Sliding window of last N turns", "Message-pair preservation (don't split user from assistant)", "When to keep tool calls in history vs strip them"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Manage recent conversation history without wasting context or breaking turn meaning.",
+          whyIntro: "Session history is useful until it becomes noise. You will use it when you are:",
+          conceptsTitle: "Short-Term Memory",
+          whyItMatters: ["Maintaining conversation flow", "Keeping context small", "Preserving tool results", "Avoiding broken history"],
+          concepts: [
+            {
+              title: "Sliding window",
+              explanation: "A sliding window keeps the most recent turns and drops older turns when context grows too large.",
+              aiUseCase: "Preserve recent user intent while staying within token budget.",
+              plainExample: "Keep the last 10 turns, not every message from a month-long chat."
+            },
+            {
+              title: "Message pairs",
+              explanation: "User and assistant messages often depend on each other, so avoid splitting them apart.",
+              aiUseCase: "Keep question-answer pairs together for coherent context.",
+              plainExample: "Keeping an answer without the question can confuse the model."
+            },
+            {
+              title: "Tool calls in history",
+              explanation: "Tool calls can be useful evidence, but verbose raw outputs can overwhelm context.",
+              aiUseCase: "Keep compact tool summaries or source IDs instead of full raw responses.",
+              plainExample: "Store 'order status: shipped' instead of the entire API response."
+            },
+            {
+              title: "Session vs memory",
+              explanation: "Session history is temporary. Important durable facts should be promoted to longer-term memory deliberately.",
+              aiUseCase: "Remember a user preference only after deciding it is stable and appropriate.",
+              plainExample: "A one-time typo should not become a permanent user preference."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Keeping all chat history", better: "Use a sliding window and summaries" },
+            { mistake: "Splitting message pairs", better: "Preserve user/assistant pairs" },
+            { mistake: "Keeping huge tool outputs", better: "Store compact observations and references" }
+          ],
+          checklist: ["Use a sliding window", "Preserve message pairs", "Summarize tool results", "Separate session history from durable memory"]
+        }
+      },
+      {
+        n: "6.4",
+        title: "Semantic caching",
+        items: ["FAISS IndexFlatIP for sub-millisecond cosine search", "Similarity thresholds (0.97 high-stakes, 0.88 general Q&A)", "Cache HIT skips everything downstream", "Daemon-thread writes so cache never blocks response"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show cache example",
+          hideCodeLabel: "Hide cache example",
+          codeLabel: "Semantic cache example",
+          goal: "Use semantic caching to skip repeated work when new questions are close enough to previous ones.",
+          whyIntro: "Semantic caching cuts latency and cost, but only when thresholds are chosen carefully. You will use it when you are:",
+          conceptsTitle: "Semantic Caching",
+          whyItMatters: ["Reducing token spend", "Improving latency", "Avoiding repeated retrieval", "Scaling common Q&A"],
+          concepts: [
+            {
+              title: "Similarity-based hits",
+              explanation: "Semantic caches embed the new query and compare it to past queries.",
+              aiUseCase: "Reuse an answer when the new question means the same thing as a cached one.",
+              plainExample: "'How do refunds work?' and 'What's the refund policy?' may hit the same cache entry.",
+              code: `if similarity(query_embedding, cached_embedding) > 0.92:\n    return cached_answer\n\nanswer = run_rag_pipeline(query)`
+            },
+            {
+              title: "Thresholds",
+              explanation: "Higher thresholds reduce wrong cache hits. Lower thresholds increase reuse but can return stale or mismatched answers.",
+              aiUseCase: "Use strict thresholds for legal, medical, financial, or account-specific answers.",
+              plainExample: "A password-reset question should not reuse an answer for refund policy."
+            },
+            {
+              title: "Cache HIT path",
+              explanation: "A cache hit can skip retrieval, reranking, model calls, and tool calls.",
+              aiUseCase: "Serve repeated FAQ-style questions quickly and cheaply.",
+              plainExample: "A cached answer can return in milliseconds instead of seconds."
+            },
+            {
+              title: "Non-blocking writes",
+              explanation: "Cache writes should not slow the user response path.",
+              aiUseCase: "Write cache entries asynchronously after a successful answer.",
+              plainExample: "Return the answer first, then store the embedding and answer in the background."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Threshold too low", better: "Use stricter thresholds for high-stakes answers" },
+            { mistake: "Caching user-specific answers globally", better: "Scope cache by tenant, user, permissions, and data version" },
+            { mistake: "Blocking on cache writes", better: "Write asynchronously after response" }
+          ],
+          checklist: ["Explain semantic cache hits", "Choose thresholds by risk", "Scope cache entries", "Write cache entries asynchronously"]
+        }
+      },
+      {
+        n: "6.5",
+        title: "Episodic memory",
+        items: ["LangChain's InMemoryStore", "LLM tags answers as EPISODIC: YES/NO so the model decides what's worth remembering", "Episodic hits enrich CONTEXT only — tools and LLM still run"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Store useful past events as optional context without replacing retrieval, tools, or fresh reasoning.",
+          whyIntro: "Episodic memory helps agents learn from prior interactions. You will use it when you are:",
+          conceptsTitle: "Episodic Memory",
+          whyItMatters: ["Remembering useful events", "Personalizing context", "Avoiding repeated explanations", "Keeping memory optional"],
+          concepts: [
+            {
+              title: "Event memories",
+              explanation: "Episodic memories are records of useful past interactions, decisions, or outcomes.",
+              aiUseCase: "Store prior troubleshooting steps, user preferences, or resolved support context.",
+              plainExample: "Remember that the user already tried restarting the service."
+            },
+            {
+              title: "Memory tagging",
+              explanation: "An LLM or rules can decide whether a new interaction is worth saving.",
+              aiUseCase: "Tag stable preferences or important outcomes, not every message.",
+              plainExample: "Save 'prefers concise answers', but not 'said hello'."
+            },
+            {
+              title: "Memory as context",
+              explanation: "Episodic hits should enrich context; they should not skip tools or fresh checks when current data matters.",
+              aiUseCase: "Use past facts as hints, then verify with current systems if needed.",
+              plainExample: "Past order status may be outdated, so query the order tool again."
+            },
+            {
+              title: "Memory store choices",
+              explanation: "In-memory stores are useful for demos. Production memory usually needs persistence, permissions, deletion, and auditability.",
+              aiUseCase: "Start simple, then move to durable stores when memory must survive sessions.",
+              plainExample: "A demo can use memory in RAM; a real app needs a database."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Remembering everything", better: "Store only useful, stable, appropriate memories" },
+            { mistake: "Treating old memory as truth", better: "Verify current facts with tools" },
+            { mistake: "No delete path", better: "Support memory review and removal" }
+          ],
+          checklist: ["Explain episodic memory", "Tag useful events", "Use memory as optional context", "Plan persistence and deletion"]
+        }
+      },
+      {
+        n: "6.6",
+        title: "Context compression",
+        items: ["Trigger threshold (>3000 tokens)", "Keep last 10 messages verbatim", "LLM summarises the rest into a single compressed entry", "When compression destroys information"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show compression policy",
+          hideCodeLabel: "Hide compression policy",
+          codeLabel: "Compression policy",
+          goal: "Compress older context while preserving facts, decisions, open tasks, and source references.",
+          whyIntro: "Compression keeps long sessions usable, but it can destroy details. You will use it when you are:",
+          conceptsTitle: "Context Compression",
+          whyItMatters: ["Handling long conversations", "Reducing token usage", "Keeping recent turns intact", "Preserving decisions"],
+          concepts: [
+            {
+              title: "Compression triggers",
+              explanation: "Compress when history crosses a token threshold or when the next request needs room for context and output.",
+              aiUseCase: "Prevent old history from crowding out retrieved evidence.",
+              plainExample: "Summarize older turns when the chat exceeds 3,000 tokens.",
+              code: `if history_tokens > 3000:\n    summary = summarize_old_history(history[:-10])\n    history = [summary] + history[-10:]`
+            },
+            {
+              title: "Keep recent turns verbatim",
+              explanation: "Recent messages often carry active intent, so keep them exactly when possible.",
+              aiUseCase: "Preserve the current task while compressing older context.",
+              plainExample: "Keep the last 10 messages unchanged and summarize the older part."
+            },
+            {
+              title: "What to preserve",
+              explanation: "A good summary preserves user goals, decisions, constraints, tool results, unresolved tasks, and source references.",
+              aiUseCase: "Use structured summaries instead of vague paragraphs.",
+              plainExample: "Keep 'selected model: X' and 'must deploy to AWS', not just 'discussed deployment'."
+            },
+            {
+              title: "Compression failure",
+              explanation: "Compression can omit edge cases, exact wording, IDs, or evidence needed later.",
+              aiUseCase: "Do not compress legal text, code diffs, IDs, or source passages that require exactness.",
+              plainExample: "A summarized contract clause may be unsafe for legal answers."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Summaries too vague", better: "Use structured summaries with decisions and open tasks" },
+            { mistake: "Compressing exact evidence", better: "Keep IDs, source passages, and code verbatim when needed" },
+            { mistake: "Dropping recent turns", better: "Keep recent active context unchanged" }
+          ],
+          checklist: ["Set compression triggers", "Keep recent turns verbatim", "Preserve decisions and sources", "Know when not to compress"]
+        }
+      },
+      {
+        n: "6.7",
+        title: "Long-term memory",
+        items: ["User profiles, preferences, facts to persist", "Vector stores vs structured stores", "Managed memory layers — mem0 (open-source) and Zep (managed) — when to skip building this yourself", "When memory becomes a privacy problem (GDPR, right-to-be-forgotten flows)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Design durable memory that is useful, permissioned, reviewable, and deletable.",
+          whyIntro: "Long-term memory changes user trust and privacy obligations. You will use it when you are:",
+          conceptsTitle: "Long-Term Memory",
+          whyItMatters: ["Persisting preferences", "Personalizing agents", "Managing privacy", "Choosing memory storage"],
+          concepts: [
+            {
+              title: "What to persist",
+              explanation: "Persist stable facts, preferences, and user-approved context that will help future interactions.",
+              aiUseCase: "Remember preferred language, project constraints, recurring tools, or workflow preferences.",
+              plainExample: "Remember 'prefers Python examples' only if it is useful and appropriate."
+            },
+            {
+              title: "Vector vs structured stores",
+              explanation: "Vector stores help retrieve fuzzy memories. Structured stores are better for exact profiles, settings, permissions, and timestamps.",
+              aiUseCase: "Use both when agents need semantic recall and reliable profile fields.",
+              plainExample: "A preference flag belongs in a table; a past troubleshooting note may belong in vector memory."
+            },
+            {
+              title: "Managed memory layers",
+              explanation: "Tools like mem0 and Zep can handle memory extraction, storage, retrieval, and lifecycle patterns.",
+              aiUseCase: "Use managed memory when building your own memory layer is not the core product.",
+              plainExample: "Do not rebuild deletion, search, and summaries if a memory layer covers your needs."
+            },
+            {
+              title: "Privacy and deletion",
+              explanation: "Long-term memory must support user consent, review, correction, deletion, retention limits, and tenant isolation.",
+              aiUseCase: "Build right-to-be-forgotten flows before memory becomes a liability.",
+              plainExample: "A user should be able to delete a stored preference or sensitive fact."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Saving memories without consent", better: "Use clear policy, consent, and review paths" },
+            { mistake: "Using vectors for exact permissions", better: "Use structured stores for exact facts and access control" },
+            { mistake: "No deletion workflow", better: "Build memory deletion and audit from the start" }
+          ],
+          checklist: ["Choose what to persist", "Compare vector and structured memory", "Evaluate managed memory layers", "Plan privacy and deletion"]
+        }
+      }
     ]
   },
   {

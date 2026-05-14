@@ -840,11 +840,230 @@ assert build_context(["chunk one"]) == expected`
     summary: "Conceptual phase. Almost no code. Where the brain-in-a-windowless-room analogy lives, and where most \"why is my agent broken\" questions get answered six months later.",
     endState: "You can explain to a non-technical PM why ChatGPT made up a fact, and tell a hiring panel which model to pick for which job — backed by benchmarks, not vibes.",
     sections: [
-      { n: "2.1", title: "What an LLM actually is", items: ["Trained on a fixed snapshot", "Knowledge cutoff dates and what they imply", "Probabilistic generation, not retrieval", "Why the same prompt gives different outputs"] },
-      { n: "2.2", title: "How an LLM thinks", items: ["BPE tokenization — why \"hello\" is 1 token but \"antidisestablishmentarianism\" is 6", "Context windows — what fits, what gets silently truncated", "Sampling parameters: temperature, top-p, top-k — when to set what", "Transformer at 30,000 feet — attention preserves position, no math, no multi-head diagrams", "Why long context degrades (\"lost in the middle\")"] },
-      { n: "2.3", title: "Reasoning models vs base models", items: ["The 2025 split: o1 / o3, Claude 3.7 thinking, Gemini 2.5 thinking, DeepSeek R1, Qwen QwQ", "What \"thinking tokens\" actually are and why they're billed", "When reasoning models are worth the latency and cost", "Reasoning effort knobs (low / medium / high) and how to budget them", "When a base model + good prompting beats a thinking model"] },
-      { n: "2.4", title: "Reading model evals & benchmarks", items: ["The benchmarks worth knowing — MMLU, GSM8K, HumanEval, SWE-bench, GPQA, MMMU, BFCL (function calling)", "Why benchmarks lie — contamination, prompt sensitivity, eval gaming", "How to read a leaderboard skeptically (LMArena, Artificial Analysis, Vellum, Aider)", "Building your own micro-eval for the task you actually care about"] },
-      { n: "2.5", title: "Comparing the major models", items: ["GPT family, Claude family, Gemini, Llama, Mistral, DeepSeek, Qwen", "Cost vs quality vs speed vs context-length tradeoffs", "When model choice matters vs when it really doesn't"] }
+      {
+        n: "2.1",
+        title: "What an LLM actually is",
+        items: ["Trained on a fixed snapshot", "Knowledge cutoff dates and what they imply", "Probabilistic generation, not retrieval", "Why the same prompt gives different outputs"],
+        detail: {
+          duration: "30–45 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand what LLMs can and cannot know so you stop treating them like databases.",
+          whyIntro: "This mental model prevents bad architecture decisions. You will use it when you are:",
+          conceptsTitle: "LLM Basics",
+          whyItMatters: ["Explaining hallucinations", "Designing RAG systems", "Choosing when to retrieve data", "Debugging inconsistent answers"],
+          concepts: [
+            {
+              title: "Trained on a fixed snapshot",
+              explanation: "A base model learns patterns from training data up to a point in time. It does not automatically know private, new, or changed facts.",
+              aiUseCase: "Use retrieval or tools when the answer depends on recent, private, or company-specific data.",
+              plainExample: "A model may know general Python, but not your latest internal policy document."
+            },
+            {
+              title: "Knowledge cutoffs",
+              explanation: "A cutoff is the approximate boundary of what the model may have seen during training.",
+              aiUseCase: "Avoid asking the model for fresh prices, current policies, or new documentation without a live source.",
+              plainExample: "If a library changed last month, browse docs or retrieve docs instead of trusting memory."
+            },
+            {
+              title: "Probabilistic generation",
+              explanation: "LLMs predict likely next tokens. They generate plausible text, not guaranteed truth.",
+              aiUseCase: "Add citations, validation, and evals for factual workflows.",
+              plainExample: "A fluent answer can still be wrong if the model is guessing."
+            },
+            {
+              title: "Same prompt, different output",
+              explanation: "Sampling settings and model behavior can produce different answers for similar or identical prompts.",
+              aiUseCase: "Use low temperature, structured outputs, tests, and guardrails when consistency matters.",
+              plainExample: "A support bot should not give three different refund policies for the same question."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Treating the model like a database", better: "Use retrieval/tools for facts that must be current or private" },
+            { mistake: "Trusting fluent answers blindly", better: "Ask for evidence or validate outputs" },
+            { mistake: "Ignoring nondeterminism", better: "Use settings and tests for repeatable workflows" }
+          ],
+          checklist: ["Explain training snapshots", "Explain knowledge cutoffs", "Explain why hallucinations happen", "Know when retrieval is needed"]
+        }
+      },
+      {
+        n: "2.2",
+        title: "How an LLM thinks",
+        items: ["BPE tokenization — why \"hello\" is 1 token but \"antidisestablishmentarianism\" is 6", "Context windows — what fits, what gets silently truncated", "Sampling parameters: temperature, top-p, top-k — when to set what", "Transformer at 30,000 feet — attention preserves position, no math, no multi-head diagrams", "Why long context degrades (\"lost in the middle\")"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand the practical mechanics that affect prompt length, cost, output style, and reliability.",
+          whyIntro: "You do not need transformer math, but you need the operating model. You will use this when you are:",
+          conceptsTitle: "LLM Mechanics",
+          whyItMatters: ["Budgeting tokens", "Writing prompts", "Handling long docs", "Tuning output randomness", "Debugging missed context"],
+          concepts: [
+            {
+              title: "Tokenization",
+              explanation: "Models read text as tokens, not characters or words. Some words are one token, others split into many.",
+              aiUseCase: "Estimate prompt cost and avoid oversized context.",
+              plainExample: "A long legal document can become expensive because every token counts."
+            },
+            {
+              title: "Context windows",
+              explanation: "The context window is the maximum text the model can consider at once.",
+              aiUseCase: "Decide how much chat history, retrieved context, and system instruction to include.",
+              plainExample: "If you stuff too much into the prompt, important content may be truncated or ignored."
+            },
+            {
+              title: "Sampling parameters",
+              explanation: "Temperature, top-p, and top-k affect how varied or conservative the output is.",
+              aiUseCase: "Use lower randomness for support answers and higher randomness for brainstorming.",
+              plainExample: "A billing assistant should be consistent; an idea generator can be more creative."
+            },
+            {
+              title: "Attention and lost-in-the-middle",
+              explanation: "Attention helps the model use context, but long prompts can still make middle sections less reliable.",
+              aiUseCase: "Place critical instructions and high-value context where the model is more likely to use them.",
+              plainExample: "A key policy buried in the middle of a long prompt may be missed."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Ignoring token limits", better: "Budget system prompt, history, retrieved context, and output" },
+            { mistake: "Using high temperature for factual work", better: "Keep factual workflows conservative" },
+            { mistake: "Dumping huge context blindly", better: "Retrieve and rank the most relevant context" }
+          ],
+          checklist: ["Explain tokens", "Explain context windows", "Pick reasonable sampling settings", "Explain lost-in-the-middle"]
+        }
+      },
+      {
+        n: "2.3",
+        title: "Reasoning models vs base models",
+        items: ["The 2025 split: o1 / o3, Claude 3.7 thinking, Gemini 2.5 thinking, DeepSeek R1, Qwen QwQ", "What \"thinking tokens\" actually are and why they're billed", "When reasoning models are worth the latency and cost", "Reasoning effort knobs (low / medium / high) and how to budget them", "When a base model + good prompting beats a thinking model"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Know when to pay for reasoning and when a faster cheaper base model is enough.",
+          whyIntro: "Reasoning models are powerful but not free. You will use this judgment when you are:",
+          conceptsTitle: "Reasoning Model Concepts",
+          whyItMatters: ["Routing tasks", "Controlling latency", "Managing cost", "Improving hard workflows"],
+          concepts: [
+            {
+              title: "Base vs reasoning models",
+              explanation: "Base/chat models are usually faster and cheaper. Reasoning models spend more compute on hard multi-step problems.",
+              aiUseCase: "Route simple classification to a cheaper model and complex planning to a reasoning model.",
+              plainExample: "Do not use a reasoning model to trim whitespace from a prompt."
+            },
+            {
+              title: "Thinking tokens and cost",
+              explanation: "Some reasoning models spend hidden or visible tokens working through the problem, and those tokens can affect cost and latency.",
+              aiUseCase: "Budget for difficult tasks like code repair, planning, math, or multi-step analysis.",
+              plainExample: "A better answer may cost more and take longer."
+            },
+            {
+              title: "Reasoning effort knobs",
+              explanation: "Some APIs let you choose lower or higher reasoning effort.",
+              aiUseCase: "Use low effort for routine checks and higher effort for expensive decisions.",
+              plainExample: "A quick summary may need low effort; a migration plan may need high effort."
+            },
+            {
+              title: "When base + prompting wins",
+              explanation: "Good prompting, examples, retrieval, and tools often beat an expensive reasoning model for routine tasks.",
+              aiUseCase: "Start simple before paying for more model power.",
+              plainExample: "A well-structured extraction prompt can outperform an overpowered model with vague instructions."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using reasoning models for everything", better: "Route by task difficulty" },
+            { mistake: "Ignoring latency", better: "Measure user-facing response time" },
+            { mistake: "Skipping prompt/data fixes", better: "Improve inputs before upgrading models" }
+          ],
+          checklist: ["Compare base and reasoning models", "Explain thinking-token cost", "Use effort settings intentionally", "Route simple tasks cheaply"]
+        }
+      },
+      {
+        n: "2.4",
+        title: "Reading model evals & benchmarks",
+        items: ["The benchmarks worth knowing — MMLU, GSM8K, HumanEval, SWE-bench, GPQA, MMMU, BFCL (function calling)", "Why benchmarks lie — contamination, prompt sensitivity, eval gaming", "How to read a leaderboard skeptically (LMArena, Artificial Analysis, Vellum, Aider)", "Building your own micro-eval for the task you actually care about"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Read model benchmarks skeptically and build small evals for your own task.",
+          whyIntro: "Public leaderboards are useful, but your app needs its own proof. You will use this when you are:",
+          conceptsTitle: "Eval Concepts",
+          whyItMatters: ["Choosing models", "Testing prompts", "Comparing providers", "Avoiding leaderboard hype"],
+          concepts: [
+            {
+              title: "Common benchmarks",
+              explanation: "MMLU, GSM8K, HumanEval, SWE-bench, GPQA, MMMU, and BFCL test different capabilities.",
+              aiUseCase: "Pick benchmarks related to your task instead of chasing one overall score.",
+              plainExample: "A coding benchmark matters more for a coding agent than a general trivia score."
+            },
+            {
+              title: "Why benchmarks can mislead",
+              explanation: "Benchmarks can be contaminated, prompt-sensitive, or optimized by providers.",
+              aiUseCase: "Treat benchmark scores as a signal, not a guarantee.",
+              plainExample: "A model can rank high publicly and still fail your document workflow."
+            },
+            {
+              title: "Reading leaderboards skeptically",
+              explanation: "Look at task type, sample size, cost, latency, and whether the benchmark resembles your use case.",
+              aiUseCase: "Compare LMArena, Artificial Analysis, Vellum, and Aider results without over-trusting one source.",
+              plainExample: "A model that users prefer in chat may not be best for structured JSON extraction."
+            },
+            {
+              title: "Build your own micro-eval",
+              explanation: "A micro-eval is a small test set that reflects the exact workflow you care about.",
+              aiUseCase: "Compare models on 20 real support questions or 30 extraction cases.",
+              plainExample: "Your refund-policy eval matters more than a generic leaderboard."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Picking models from one leaderboard", better: "Compare on your real task" },
+            { mistake: "Ignoring cost and latency", better: "Measure quality, cost, and speed together" },
+            { mistake: "No regression eval", better: "Keep a small test set for every prompt/model change" }
+          ],
+          checklist: ["Name key benchmarks", "Explain benchmark weaknesses", "Read leaderboards skeptically", "Design one micro-eval"]
+        }
+      },
+      {
+        n: "2.5",
+        title: "Comparing the major models",
+        items: ["GPT family, Claude family, Gemini, Llama, Mistral, DeepSeek, Qwen", "Cost vs quality vs speed vs context-length tradeoffs", "When model choice matters vs when it really doesn't"],
+        detail: {
+          duration: "30–45 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Compare model families by practical tradeoffs instead of brand preference.",
+          whyIntro: "Model choice affects cost, reliability, latency, and deployment options. You will use this when you are:",
+          conceptsTitle: "Model Comparison Concepts",
+          whyItMatters: ["Choosing providers", "Routing requests", "Budgeting costs", "Planning fallbacks"],
+          concepts: [
+            {
+              title: "Major model families",
+              explanation: "GPT, Claude, Gemini, Llama, Mistral, DeepSeek, and Qwen each have different strengths, APIs, pricing, and deployment options.",
+              aiUseCase: "Shortlist models that fit your task, budget, and hosting constraints.",
+              plainExample: "A regulated app may care about hosting and data controls as much as raw quality."
+            },
+            {
+              title: "Cost, quality, speed, and context",
+              explanation: "No model wins everything. Stronger models often cost more or respond slower.",
+              aiUseCase: "Use cheap fast models for easy work and stronger models for hard work.",
+              plainExample: "Classify intent cheaply, then use a stronger model only for complex answers."
+            },
+            {
+              title: "When model choice matters",
+              explanation: "Model choice matters for hard reasoning, coding, strict formatting, long context, and safety-critical work.",
+              aiUseCase: "Upgrade the model when failures are caused by capability, not by bad prompts or missing context.",
+              plainExample: "If retrieval is wrong, switching models may not fix the answer."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Choosing by hype", better: "Run a small eval on your task" },
+            { mistake: "Using one model for everything", better: "Route by difficulty and cost" },
+            { mistake: "Ignoring fallback plans", better: "Have a backup model/provider for production paths" }
+          ],
+          checklist: ["Compare major model families", "Explain cost/quality/speed tradeoffs", "Know when model choice matters", "Design a simple routing plan"]
+        }
+      }
     ]
   },
   {

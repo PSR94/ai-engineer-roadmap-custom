@@ -616,8 +616,8 @@ body::before {
   border-top: 1px solid var(--line);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(280px, 340px) 1fr;
-  gap: 80px;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: 64px;
   scroll-margin-top: 56px;
   content-visibility: auto;
   contain-intrinsic-size: 1px 900px;
@@ -797,7 +797,7 @@ body::before {
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 248px 1fr;
   min-height: 460px;
   box-shadow: 0 24px 60px -30px rgba(0,0,0,0.16);
 }
@@ -835,7 +835,7 @@ body::before {
 .tabbox__tab.active .tabbox__tab-title { font-weight: 500; }
 
 .tabbox__panel {
-  padding: 36px 40px 40px;
+  padding: 34px 32px 38px;
   display: flex; flex-direction: column;
   position: relative; overflow: hidden;
   min-width: 0;
@@ -887,9 +887,9 @@ body::before {
 }
 .module-detail__header {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
+  gap: 14px;
   padding-bottom: 26px;
   border-bottom: 1px solid var(--line);
 }
@@ -899,9 +899,8 @@ body::before {
 .module-detail__badges {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
-  flex-shrink: 0;
 }
 .module-detail__badges span {
   font-family: 'JetBrains Mono', monospace;

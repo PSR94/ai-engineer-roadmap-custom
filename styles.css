@@ -769,8 +769,8 @@ body::before {
 
 .phase__summary {
   margin-top: 14px;
-  font-size: 17px; line-height: 1.45;
-  color: var(--fg-dim); max-width: 58ch;
+  font-size: 16px; line-height: 1.45;
+  color: var(--fg-dim); max-width: 86ch;
 }
 
 /* ============ TABBOX ============ */
@@ -1588,7 +1588,7 @@ body::before {
   .phase__index { position: static; }
   .phase__num { font-size: 72px; }
   .phase__title { font-size: clamp(30px, 9vw, 42px); max-width: 100%; }
-  .phase__summary { margin-top: 10px; font-size: 15px; line-height: 1.45; }
+  .phase__summary { margin-top: 10px; font-size: 15px; line-height: 1.45; max-width: 100%; }
   .phase__weeks-block { margin-top: 22px; padding: 18px; }
   .phase__weeks { font-size: 30px; }
   .module-detail__header {

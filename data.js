@@ -2764,14 +2764,386 @@ assert build_context(["chunk one"]) == expected`
     summary: "When one agent isn't enough.",
     endState: "You can design a multi-step agent workflow on a whiteboard, build it in LangGraph, and debug it when one node loops infinitely.",
     sections: [
-      { n: "7.1", title: "When to go multi-agent (and when not to)", items: ["Single-agent-with-tools beats multi-agent for ~80% of tasks", "Multi-agent earns its weight when steps need different prompts, tools, or specialised reasoning", "The Tableau→QuickSight conversion case as a worked example"] },
-      { n: "7.2", title: "LangGraph fundamentals", items: ["Nodes, edges, state", "StateGraph and reducers", "Conditional edges and routing", "Cycles and termination conditions"] },
-      { n: "7.3", title: "Common patterns", items: ["Supervisor + workers", "Sequential pipeline", "Parallel fan-out / fan-in", "Plan-and-execute", "Reflection loops"] },
-      { n: "7.4", title: "Agent-as-tool — the lightweight alternative", items: ["Wrap a sub-agent behind a normal @tool interface", "Parent agent calls it like any other function — no graph, no state plumbing", "When this beats LangGraph (clear hierarchy, no shared state, deterministic flow)", "Composing specialist agents (researcher, summariser, critic) without orchestration overhead"] },
-      { n: "7.5", title: "State management", items: ["Typed state with Pydantic", "What to put in state vs context", "Checkpointers for resumability (MemorySaver, SqliteSaver, PostgresSaver)"] },
-      { n: "7.6", title: "A2A — Agent-to-Agent Protocol", items: ["Agent discovery and capability cards", "Cross-framework delegation", "When A2A beats just calling another function"] },
-      { n: "7.7", title: "Frameworks compared (briefly)", items: ["LangGraph (most mature)", "CrewAI (simpler, opinionated)", "AutoGen (Microsoft)", "Pydantic AI (typed, FastAPI-flavoured ergonomics)", "OpenAI Swarm / its successor — minimal handoff-style orchestration", "Custom orchestration with raw asyncio", "Pick one and stick with it"] },
-      { n: "7.8", title: "Debugging multi-agent systems", items: ["LangSmith tracing", "Why your agents are talking past each other", "Cycles that won't terminate", "Cost explosions"] }
+      {
+        n: "7.1",
+        title: "When to go multi-agent (and when not to)",
+        items: ["Single-agent-with-tools beats multi-agent for ~80% of tasks", "Multi-agent earns its weight when steps need different prompts, tools, or specialised reasoning", "The Tableau→QuickSight conversion case as a worked example"],
+        detail: {
+          duration: "45–60 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Decide when multi-agent orchestration is actually worth the added complexity.",
+          whyIntro: "Multi-agent systems are powerful, but they are expensive to debug. You will use this judgment when you are:",
+          conceptsTitle: "Multi-Agent Decision Points",
+          whyItMatters: ["Avoiding over-engineering", "Splitting specialist work", "Controlling cost", "Designing capstone workflows"],
+          concepts: [
+            {
+              title: "Single agent first",
+              explanation: "A single agent with good tools is simpler, cheaper, and easier to trace than a multi-agent workflow.",
+              aiUseCase: "Use one agent for most support bots, RAG apps, routing, and simple tool workflows.",
+              plainExample: "A doc Q&A bot usually needs retrieval and citations, not five agents."
+            },
+            {
+              title: "When multi-agent earns its weight",
+              explanation: "Use multiple agents when steps need different prompts, tools, permissions, quality checks, or reasoning styles.",
+              aiUseCase: "Split planner, SQL writer, validator, executor, and explainer for natural-language analytics.",
+              plainExample: "The agent that writes SQL should not be the same component that blindly executes it."
+            },
+            {
+              title: "Cost and latency tradeoff",
+              explanation: "Every extra agent call adds tokens, latency, failure modes, and tracing burden.",
+              aiUseCase: "Measure whether specialization improves quality enough to justify cost.",
+              plainExample: "Three agents that each call a large model can make a simple request slow and expensive."
+            },
+            {
+              title: "Worked conversion workflows",
+              explanation: "Migration tasks like Tableau to QuickSight often benefit from specialist steps and validation loops.",
+              aiUseCase: "Use separate agents for inventory, mapping, code generation, validation, and explanation.",
+              plainExample: "One agent reads the old dashboard, another maps fields, another validates the generated target config."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using multi-agent because it sounds advanced", better: "Start single-agent and add agents only for clear boundaries" },
+            { mistake: "No measurable improvement", better: "Compare quality, latency, and cost against a simpler baseline" },
+            { mistake: "Shared responsibilities", better: "Give each agent a clear job and stop condition" }
+          ],
+          checklist: ["Explain when single-agent is enough", "Identify real specialization needs", "Estimate cost and latency", "Define agent responsibilities"]
+        }
+      },
+      {
+        n: "7.2",
+        title: "LangGraph fundamentals",
+        items: ["Nodes, edges, state", "StateGraph and reducers", "Conditional edges and routing", "Cycles and termination conditions"],
+        detail: {
+          duration: "75–90 min",
+          level: "Advanced",
+          status: "Required",
+          showCodeLabel: "Show graph example",
+          hideCodeLabel: "Hide graph example",
+          codeLabel: "LangGraph-style example",
+          goal: "Understand the graph primitives used to build durable, inspectable agent workflows.",
+          whyIntro: "LangGraph gives agent workflows shape and control. You will use it when you are:",
+          conceptsTitle: "LangGraph Fundamentals",
+          whyItMatters: ["Building graphs", "Routing between steps", "Managing state", "Stopping loops"],
+          concepts: [
+            {
+              title: "Nodes and edges",
+              explanation: "Nodes do work. Edges decide what happens next.",
+              aiUseCase: "Represent planner, retriever, tool caller, validator, and final answer steps as explicit nodes.",
+              plainExample: "Planner -> SQL Writer -> Validator -> Executor -> Explainer is a graph."
+            },
+            {
+              title: "StateGraph",
+              explanation: "StateGraph carries shared state between nodes, such as messages, plans, tool results, retries, and final outputs.",
+              aiUseCase: "Keep the workflow inspectable instead of hiding everything inside one prompt.",
+              plainExample: "The SQL validator reads state.sql and writes state.validation_result.",
+              code: `state = {\n    \"question\": \"sales by region last month\",\n    \"sql\": None,\n    \"validation\": None,\n    \"answer\": None\n}`
+            },
+            {
+              title: "Conditional routing",
+              explanation: "Conditional edges route based on state, validation results, errors, or confidence.",
+              aiUseCase: "Send bad SQL back to the writer, or send valid SQL to the executor.",
+              plainExample: "If validation fails, repair the query before execution."
+            },
+            {
+              title: "Cycles and termination",
+              explanation: "Graphs can loop, but every loop needs max retries and clear exit rules.",
+              aiUseCase: "Prevent repair-reflect loops from running forever.",
+              plainExample: "After three failed repairs, stop and ask a human."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Putting all logic in one node", better: "Split steps where state and routing matter" },
+            { mistake: "No termination conditions", better: "Set retry limits and failure exits" },
+            { mistake: "Unclear state shape", better: "Define typed state fields up front" }
+          ],
+          checklist: ["Explain nodes and edges", "Use shared state", "Route conditionally", "Add loop termination"]
+        }
+      },
+      {
+        n: "7.3",
+        title: "Common patterns",
+        items: ["Supervisor + workers", "Sequential pipeline", "Parallel fan-out / fan-in", "Plan-and-execute", "Reflection loops"],
+        detail: {
+          duration: "60–75 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Recognize common orchestration patterns and choose the simplest one that fits the task.",
+          whyIntro: "Patterns keep agent design understandable. You will use them when you are:",
+          conceptsTitle: "Orchestration Patterns",
+          whyItMatters: ["Designing workflows", "Reducing complexity", "Parallelizing work", "Adding quality checks"],
+          concepts: [
+            {
+              title: "Supervisor and workers",
+              explanation: "A supervisor routes tasks to specialist workers and combines their results.",
+              aiUseCase: "Use when one request may need research, coding, validation, or summarization specialists.",
+              plainExample: "The supervisor sends pricing questions to a finance worker and policy questions to a policy worker."
+            },
+            {
+              title: "Sequential pipeline",
+              explanation: "A pipeline runs fixed steps in order.",
+              aiUseCase: "Use for ingestion, extraction, validation, and report generation flows.",
+              plainExample: "Parse document -> extract fields -> validate -> write database."
+            },
+            {
+              title: "Parallel fan-out / fan-in",
+              explanation: "Fan-out runs independent branches in parallel, then fan-in combines the results.",
+              aiUseCase: "Ask multiple reviewers to inspect different parts of a task at the same time.",
+              plainExample: "Run security, cost, and correctness reviewers in parallel, then merge findings."
+            },
+            {
+              title: "Plan, execute, reflect",
+              explanation: "Plan-and-execute separates strategy from action. Reflection checks and improves results.",
+              aiUseCase: "Use for hard tasks where direct generation is unreliable.",
+              plainExample: "Plan SQL steps, execute each, then reflect on whether the answer matches the question."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using a supervisor for fixed workflows", better: "Use a simple pipeline when steps are known" },
+            { mistake: "Parallelizing dependent steps", better: "Only fan out independent work" },
+            { mistake: "Reflection without limits", better: "Set retry and stop conditions" }
+          ],
+          checklist: ["Choose supervisor vs pipeline", "Use fan-out/fan-in", "Apply plan-and-execute", "Bound reflection loops"]
+        }
+      },
+      {
+        n: "7.4",
+        title: "Agent-as-tool — the lightweight alternative",
+        items: ["Wrap a sub-agent behind a normal @tool interface", "Parent agent calls it like any other function — no graph, no state plumbing", "When this beats LangGraph (clear hierarchy, no shared state, deterministic flow)", "Composing specialist agents (researcher, summariser, critic) without orchestration overhead"],
+        detail: {
+          duration: "45–60 min",
+          level: "Advanced",
+          status: "Required",
+          showCodeLabel: "Show agent-as-tool example",
+          hideCodeLabel: "Hide agent-as-tool example",
+          codeLabel: "Agent-as-tool example",
+          goal: "Use specialist agents behind tool interfaces when a full graph would be unnecessary.",
+          whyIntro: "Agent-as-tool gives specialization without full orchestration overhead. You will use it when you are:",
+          conceptsTitle: "Agent-As-Tool",
+          whyItMatters: ["Keeping systems simple", "Adding specialists", "Avoiding graph overhead", "Reusing agent capabilities"],
+          concepts: [
+            {
+              title: "Sub-agent behind a tool",
+              explanation: "A parent agent can call a specialist agent through a normal tool interface.",
+              aiUseCase: "Wrap a researcher, summarizer, SQL assistant, or critic as a callable capability.",
+              plainExample: "The parent calls research_company(company_name) and gets structured findings.",
+              code: `def research_company(name: str) -> dict:\n    \"\"\"Use the research agent to gather concise company facts.\"\"\"\n    return research_agent.invoke({\"company\": name})`
+            },
+            {
+              title: "Clear hierarchy",
+              explanation: "This pattern works best when the parent delegates and the child returns a result without shared state complexity.",
+              aiUseCase: "Use for clean request-response subtasks.",
+              plainExample: "A summarizer sub-agent returns summary bullets and citations."
+            },
+            {
+              title: "When it beats a graph",
+              explanation: "Agent-as-tool is simpler when the workflow has clear hierarchy, no complex loops, and no shared state updates.",
+              aiUseCase: "Avoid LangGraph when a few callable specialists are enough.",
+              plainExample: "A parent agent with a critic tool may be enough for report drafting."
+            },
+            {
+              title: "Composing specialists",
+              explanation: "Specialists should have narrow prompts, typed inputs, and typed outputs.",
+              aiUseCase: "Make specialist outputs easy for the parent agent to inspect and combine.",
+              plainExample: "A critic returns severity, issue, and suggested fix fields."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Hidden multi-step side effects", better: "Keep sub-agent tools narrow and transparent" },
+            { mistake: "Free-form specialist output", better: "Return structured results" },
+            { mistake: "Using agent-as-tool for shared-state workflows", better: "Use a graph when state and routing matter" }
+          ],
+          checklist: ["Wrap sub-agents as tools", "Use clear parent-child hierarchy", "Return structured specialist results", "Know when a graph is needed"]
+        }
+      },
+      {
+        n: "7.5",
+        title: "State management",
+        items: ["Typed state with Pydantic", "What to put in state vs context", "Checkpointers for resumability (MemorySaver, SqliteSaver, PostgresSaver)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Advanced",
+          status: "Required",
+          showCodeLabel: "Show state example",
+          hideCodeLabel: "Hide state example",
+          codeLabel: "State model example",
+          goal: "Design typed workflow state that survives retries, approvals, and long-running execution.",
+          whyIntro: "State is the backbone of durable agent workflows. You will use it when you are:",
+          conceptsTitle: "Agent State Management",
+          whyItMatters: ["Resuming workflows", "Debugging graphs", "Avoiding lost data", "Controlling context size"],
+          concepts: [
+            {
+              title: "Typed state",
+              explanation: "Typed state defines what fields exist, what they mean, and which nodes can update them.",
+              aiUseCase: "Use Pydantic or typed dictionaries for plans, SQL, validation results, retries, and final outputs.",
+              plainExample: "A validator should write validation_status, not random text into messages.",
+              code: `class WorkflowState(BaseModel):\n    question: str\n    plan: list[str] = []\n    sql: str | None = None\n    retries: int = 0\n    answer: str | None = None`
+            },
+            {
+              title: "State vs context",
+              explanation: "State is the application record. Context is the text sent to the model for one step.",
+              aiUseCase: "Keep large raw data in storage and pass only relevant summaries into context.",
+              plainExample: "Store all retrieved chunks in state or DB, but send only top chunks to the model."
+            },
+            {
+              title: "Checkpointers",
+              explanation: "Checkpointers persist state so workflows can resume after failure, approval, or restarts.",
+              aiUseCase: "Use memory, SQLite, or Postgres checkpointers depending on durability needs.",
+              plainExample: "A graph can pause for human approval and resume tomorrow."
+            },
+            {
+              title: "State ownership",
+              explanation: "Each node should own a small set of fields to reduce accidental overwrites.",
+              aiUseCase: "Make graph behavior easier to reason about and test.",
+              plainExample: "The SQL writer writes sql; the executor writes rows; the explainer writes answer."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using messages as the only state", better: "Use typed state fields for workflow data" },
+            { mistake: "Putting huge data in model context", better: "Store data and pass compact context" },
+            { mistake: "No persistence", better: "Use checkpointers for long-running workflows" }
+          ],
+          checklist: ["Define typed state", "Separate state from context", "Use checkpointers", "Assign state ownership per node"]
+        }
+      },
+      {
+        n: "7.6",
+        title: "A2A — Agent-to-Agent Protocol",
+        items: ["Agent discovery and capability cards", "Cross-framework delegation", "When A2A beats just calling another function"],
+        detail: {
+          duration: "45–60 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Understand when agent-to-agent communication is useful and when simple function calls are enough.",
+          whyIntro: "A2A matters when independent agents need to discover and delegate across boundaries. You will use it when you are:",
+          conceptsTitle: "A2A Concepts",
+          whyItMatters: ["Delegating across systems", "Describing capabilities", "Connecting frameworks", "Avoiding tight coupling"],
+          concepts: [
+            {
+              title: "Capability cards",
+              explanation: "Capability cards describe what an agent can do, what inputs it accepts, and what outputs it returns.",
+              aiUseCase: "Let one agent discover whether another agent can handle research, coding, analytics, or support tasks.",
+              plainExample: "An analytics agent advertises that it can answer SQL-backed sales questions."
+            },
+            {
+              title: "Cross-framework delegation",
+              explanation: "A2A can allow agents built in different frameworks or systems to delegate tasks.",
+              aiUseCase: "Connect a LangGraph workflow to a separate specialist agent owned by another team.",
+              plainExample: "Your planner calls a finance agent service without knowing its internal framework."
+            },
+            {
+              title: "When A2A helps",
+              explanation: "A2A helps when agents are independently deployed, owned, versioned, or discovered.",
+              aiUseCase: "Use for enterprise ecosystems where many teams expose specialized agents.",
+              plainExample: "A central assistant discovers and delegates to HR, IT, and finance agents."
+            },
+            {
+              title: "When a function call is enough",
+              explanation: "If the subtask is local, stable, and simple, a normal tool or function is easier.",
+              aiUseCase: "Avoid protocol overhead for one codebase and one owner.",
+              plainExample: "Do not use A2A just to call a local summarizer function."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using A2A inside one small app", better: "Use normal tools/functions unless boundaries justify A2A" },
+            { mistake: "Vague capability descriptions", better: "Define inputs, outputs, limits, and ownership" },
+            { mistake: "No auth model", better: "Treat cross-agent delegation as an external integration" }
+          ],
+          checklist: ["Explain capability cards", "Use cross-framework delegation appropriately", "Know when A2A helps", "Prefer functions for local subtasks"]
+        }
+      },
+      {
+        n: "7.7",
+        title: "Frameworks compared (briefly)",
+        items: ["LangGraph (most mature)", "CrewAI (simpler, opinionated)", "AutoGen (Microsoft)", "Pydantic AI (typed, FastAPI-flavoured ergonomics)", "OpenAI Swarm / its successor — minimal handoff-style orchestration", "Custom orchestration with raw asyncio", "Pick one and stick with it"],
+        detail: {
+          duration: "45–60 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Choose an orchestration approach based on workflow complexity, typing needs, team skill, and production requirements.",
+          whyIntro: "Framework choice affects debugging, hiring, maintenance, and speed. You will use this when you are:",
+          conceptsTitle: "Framework Comparison",
+          whyItMatters: ["Choosing a stack", "Avoiding rewrites", "Matching complexity", "Planning production support"],
+          concepts: [
+            {
+              title: "LangGraph",
+              explanation: "LangGraph is a strong default for durable graph workflows with state, routing, cycles, and checkpointers.",
+              aiUseCase: "Use for complex multi-step systems that need explicit control flow.",
+              plainExample: "Natural language to SQL with validation and retries fits LangGraph well."
+            },
+            {
+              title: "CrewAI and AutoGen",
+              explanation: "CrewAI is simpler and opinionated. AutoGen is useful in Microsoft-heavy or research-style multi-agent setups.",
+              aiUseCase: "Use when the framework's style matches the team's workflow and project risk.",
+              plainExample: "A quick role-based prototype may be easier in CrewAI."
+            },
+            {
+              title: "Pydantic AI and handoff-style systems",
+              explanation: "Typed frameworks and minimal handoff systems work well when typed outputs and clean Python ergonomics matter.",
+              aiUseCase: "Use for FastAPI-flavored apps and structured agent outputs.",
+              plainExample: "A typed support agent can return a Pydantic response model directly."
+            },
+            {
+              title: "Custom asyncio",
+              explanation: "Custom orchestration can be best when the workflow is deterministic and model calls are just one part of the system.",
+              aiUseCase: "Use raw Python for fixed pipelines, simple parallelism, and low framework overhead.",
+              plainExample: "If every step is known, asyncio tasks may beat an agent framework."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Switching frameworks constantly", better: "Pick one and build depth" },
+            { mistake: "Using a graph framework for fixed scripts", better: "Use simpler code when orchestration is deterministic" },
+            { mistake: "Ignoring team familiarity", better: "Choose something the team can debug under pressure" }
+          ],
+          checklist: ["Compare major frameworks", "Match framework to workflow complexity", "Know when custom code is enough", "Commit to one stack for a project"]
+        }
+      },
+      {
+        n: "7.8",
+        title: "Debugging multi-agent systems",
+        items: ["LangSmith tracing", "Why your agents are talking past each other", "Cycles that won't terminate", "Cost explosions"],
+        detail: {
+          duration: "60–75 min",
+          level: "Advanced",
+          status: "Required",
+          goal: "Debug multi-agent failures by inspecting traces, state transitions, routing decisions, and costs.",
+          whyIntro: "Multi-agent bugs hide between components. You will debug them when you are:",
+          conceptsTitle: "Multi-Agent Debugging",
+          whyItMatters: ["Finding routing bugs", "Stopping infinite loops", "Reducing spend", "Fixing agent miscommunication"],
+          concepts: [
+            {
+              title: "Trace every step",
+              explanation: "Trace model calls, node inputs, node outputs, state updates, tool calls, retries, and routing decisions.",
+              aiUseCase: "Use LangSmith, LangFuse, or framework tracing to replay a bad run.",
+              plainExample: "A trace shows that the validator rejected valid SQL because it received the wrong schema."
+            },
+            {
+              title: "Agents talking past each other",
+              explanation: "Specialists fail when their contracts, terminology, or output formats do not match.",
+              aiUseCase: "Define typed interfaces and shared vocabulary between agents.",
+              plainExample: "The planner says 'metric', the SQL writer expects 'column', and the executor receives neither."
+            },
+            {
+              title: "Cycles that do not terminate",
+              explanation: "Reflection and repair loops need retry limits, confidence thresholds, and explicit failure states.",
+              aiUseCase: "Stop infinite loops before they drain budget or hang the user request.",
+              plainExample: "After three failed SQL repairs, return a clear failure instead of looping."
+            },
+            {
+              title: "Cost explosions",
+              explanation: "Multi-agent systems multiply model calls, tool calls, context size, and retries.",
+              aiUseCase: "Track cost by node, route, model, and user request.",
+              plainExample: "One user question can become 20 model calls if every reviewer reflects twice."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only inspecting final output", better: "Inspect traces and state transitions" },
+            { mistake: "No typed contracts between agents", better: "Use schemas for handoffs" },
+            { mistake: "No per-node cost tracking", better: "Track tokens, latency, and retries by node" }
+          ],
+          checklist: ["Trace every graph step", "Define handoff contracts", "Stop infinite loops", "Track cost by node"]
+        }
+      }
     ]
   },
   {

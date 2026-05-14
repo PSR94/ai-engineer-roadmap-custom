@@ -1077,14 +1077,394 @@ assert build_context(["chunk one"]) == expected`
     summary: "The pivot from \"ChatGPT user\" to \"engineer who controls LLMs.\"",
     endState: "You can take a flaky prompt that works \"sometimes\" and systematically make it reliable — and cut its cost in half with caching while you're at it.",
     sections: [
-      { n: "3.1", title: "UI vs API — the hinge moment", items: ["Same prompt, same model, different output — why?", "System prompts you don't see", "Skills/tools the chat UI calls silently", "Why production work happens via API"] },
-      { n: "3.2", title: "Calling LLMs via API", items: ["OpenAI SDK, Anthropic SDK", "Message format (system / user / assistant)", "Streaming responses", "Structured output (JSON mode, tool-call schemas, XML tags)"] },
-      { n: "3.3", title: "Prompt anatomy", items: ["System prompt vs user turn vs assistant prefill", "Role and persona assignment", "Positive framing over negative constraints", "Markdown vs XML structure"] },
-      { n: "3.4", title: "Core techniques", items: ["Zero-shot", "Few-shot with curated examples", "COSTAR framework (Context, Objective, Style, Tone, Audience, Response)", "Iterative refinement loop"] },
-      { n: "3.5", title: "Applied prompt patterns", items: ["Extraction (entities, dates, relationships)", "Classification (intent, sentiment, routing)", "Transformation (summarize, translate, reformat)", "Generation (reports, SQL, code)", "Decomposition (break complex queries into sub-prompts)"] },
-      { n: "3.6", title: "Advanced reasoning techniques", items: ["Chain of Thought — \"think step by step\"", "Self-Consistency — sample multiple paths, majority vote", "Self-Refine — generate, critique, refine loop", "Least-to-Most — decompose hard problems into ordered sub-problems", "Tree of Thought (research-flavoured; mention but don't drill)"] },
-      { n: "3.7", title: "Prompt management & cost in production", items: ["Versioning prompts in code vs as managed resources", "A/B testing prompt variants", "AWS Bedrock Prompt Management for the lifecycle without code deploys", "Prompt caching — Anthropic cache_control and OpenAI's automatic cached input pricing (5–10× cost cuts on long system prompts)", "DSPy — programmatic prompt optimisation when you want the framework to tune your prompts for you (mention; depth is optional)"] },
-      { n: "3.8", title: "Frontend basics for AI demos", items: ["HTML/CSS/JS fundamentals — forms, fetch, loading states, error states", "Streamlit for internal tools and quick evaluation UIs", "React/Next.js basics for a real chat experience", "Streaming UI patterns: token stream, cancel button, retry, citations, trace link"] }
+      {
+        n: "3.1",
+        title: "UI vs API — the hinge moment",
+        items: ["Same prompt, same model, different output — why?", "System prompts you don't see", "Skills/tools the chat UI calls silently", "Why production work happens via API"],
+        detail: {
+          duration: "30–45 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Understand why a chat UI is not the same thing as a production API integration.",
+          whyIntro: "This is the point where prompting turns into engineering. You will use it when you are:",
+          conceptsTitle: "UI vs API Concepts",
+          whyItMatters: ["Reproducing outputs", "Debugging model behavior", "Moving demos into apps", "Controlling tools and hidden context"],
+          concepts: [
+            {
+              title: "Same model, different wrapper",
+              explanation: "A chat UI may add hidden instructions, memory, tools, safety layers, or formatting that your API call does not include.",
+              aiUseCase: "When an API result differs from ChatGPT, compare the full prompt, system instructions, tools, and settings.",
+              plainExample: "The UI may silently search the web, while your API call only sees the text you sent."
+            },
+            {
+              title: "Hidden system prompts",
+              explanation: "System prompts shape behavior before the user message is read.",
+              aiUseCase: "Production apps need explicit system prompts so behavior is repeatable.",
+              plainExample: "A support bot should always know its refund policy style, not infer it from one user question."
+            },
+            {
+              title: "Production happens through APIs",
+              explanation: "APIs let you control prompts, tools, structured output, logging, retries, cost, and security.",
+              aiUseCase: "Use APIs for real apps, evals, traces, and deployment.",
+              plainExample: "A demo chat is fine for exploration; a customer workflow needs code, logs, and tests."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Expecting UI and API outputs to match exactly", better: "Compare hidden context, tools, and generation settings" },
+            { mistake: "Copying a chat prompt directly into code", better: "Turn it into system, user, and output contracts" },
+            { mistake: "No logs for API calls", better: "Log prompt version, model, latency, tokens, and output status" }
+          ],
+          checklist: ["Explain UI/API differences", "Identify hidden system context", "Know why APIs are needed", "Log model calls in production"]
+        }
+      },
+      {
+        n: "3.2",
+        title: "Calling LLMs via API",
+        items: ["OpenAI SDK, Anthropic SDK", "Message format (system / user / assistant)", "Streaming responses", "Structured output (JSON mode, tool-call schemas, XML tags)"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show API example",
+          hideCodeLabel: "Hide API example",
+          codeLabel: "API example",
+          goal: "Make a basic LLM API call, stream text, and request structured output.",
+          whyIntro: "Almost every AI app starts here. You will use this when you are:",
+          conceptsTitle: "API Calling Concepts",
+          whyItMatters: ["Building chat apps", "Creating eval scripts", "Returning JSON", "Streaming responses to users"],
+          concepts: [
+            {
+              title: "SDK clients",
+              explanation: "SDKs wrap HTTP calls so you can send messages, set models, stream output, and handle errors from code.",
+              aiUseCase: "Use SDK calls inside FastAPI routes, workers, eval scripts, and agent tools.",
+              plainExample: "Your backend sends a user question to the model and receives an answer object.",
+              code: `from openai import OpenAI\n\nclient = OpenAI()\n\nresponse = client.responses.create(\n    model=\"gpt-4.1-mini\",\n    input=\"Explain RAG in one paragraph.\"\n)\n\nprint(response.output_text)`
+            },
+            {
+              title: "Message roles",
+              explanation: "System messages set behavior, user messages carry user input, and assistant messages can preserve conversation context.",
+              aiUseCase: "Separate app instructions from user data so the model has a stable contract.",
+              plainExample: "The system says 'answer as a support assistant'; the user asks the actual question.",
+              code: `messages = [\n    {\"role\": \"system\", \"content\": \"You are a concise AI tutor.\"},\n    {\"role\": \"user\", \"content\": \"What is tokenization?\"}\n]`
+            },
+            {
+              title: "Structured output",
+              explanation: "Structured output asks the model for predictable data instead of a loose paragraph.",
+              aiUseCase: "Return JSON for classification, extraction, routing, and downstream code.",
+              plainExample: "Instead of 'this sounds urgent', return {\"priority\": \"high\"}.",
+              code: `expected = {\n    \"intent\": \"refund_request\",\n    \"priority\": \"high\",\n    \"needs_human\": True\n}`
+            },
+            {
+              title: "Streaming responses",
+              explanation: "Streaming sends partial output as it is generated, improving perceived speed.",
+              aiUseCase: "Use streaming for chat UIs, long answers, and demos where waiting feels broken.",
+              plainExample: "The user sees words appear instead of staring at a spinner."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Hardcoding API keys", better: "Use environment variables and secret stores" },
+            { mistake: "Parsing free text as if it were JSON", better: "Request structured output and validate it" },
+            { mistake: "No timeout or retry policy", better: "Handle rate limits, timeouts, and provider failures" }
+          ],
+          checklist: ["Make one SDK call", "Use system/user roles", "Request structured output", "Understand streaming"]
+        }
+      },
+      {
+        n: "3.3",
+        title: "Prompt anatomy",
+        items: ["System prompt vs user turn vs assistant prefill", "Role and persona assignment", "Positive framing over negative constraints", "Markdown vs XML structure"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show prompt example",
+          hideCodeLabel: "Hide prompt example",
+          codeLabel: "Prompt example",
+          goal: "Structure prompts so instructions, context, and user input are clearly separated.",
+          whyIntro: "Prompt structure is a reliability tool. You will use it when you are:",
+          conceptsTitle: "Prompt Anatomy",
+          whyItMatters: ["Reducing ambiguity", "Defending against messy input", "Improving formatting", "Making prompts testable"],
+          concepts: [
+            {
+              title: "System vs user",
+              explanation: "System instructions define app behavior. User content is data that should not rewrite those rules.",
+              aiUseCase: "Keep policies, style, and output rules outside the user message.",
+              plainExample: "The user can ask anything, but the app still follows your system contract.",
+              code: `SYSTEM = \"\"\"You are a support assistant.\nFollow company policy. Return concise answers.\n\"\"\"\n\nUSER = \"Where is my refund?\"`
+            },
+            {
+              title: "Role and persona",
+              explanation: "Roles should clarify task behavior, not add fake personality fluff.",
+              aiUseCase: "Use role instructions for domain, tone, and boundaries.",
+              plainExample: "Say 'act as a careful technical support assistant', not 'act like a genius wizard'."
+            },
+            {
+              title: "Positive framing",
+              explanation: "Tell the model what to do, not only what to avoid.",
+              aiUseCase: "Replace vague negatives with specific allowed behavior and fallback rules.",
+              plainExample: "Use 'answer only from provided context' instead of only 'do not hallucinate'."
+            },
+            {
+              title: "Markdown and XML structure",
+              explanation: "Clear tags and headings help separate instructions, examples, context, and output format.",
+              aiUseCase: "Use structure for long prompts, RAG context, and extraction tasks.",
+              plainExample: "Put retrieved chunks inside <context> so they are visibly separate from user input."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Mixing instructions and user data", better: "Separate system, context, and user sections" },
+            { mistake: "Only saying what not to do", better: "State the desired behavior directly" },
+            { mistake: "Vague output format", better: "Specify fields, order, and fallback values" }
+          ],
+          checklist: ["Separate system and user content", "Write useful role instructions", "Use positive rules", "Structure long prompts"]
+        }
+      },
+      {
+        n: "3.4",
+        title: "Core techniques",
+        items: ["Zero-shot", "Few-shot with curated examples", "COSTAR framework (Context, Objective, Style, Tone, Audience, Response)", "Iterative refinement loop"],
+        detail: {
+          duration: "45–60 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show prompt example",
+          hideCodeLabel: "Hide prompt example",
+          codeLabel: "Prompt example",
+          goal: "Use a small set of prompt techniques before reaching for complex agent patterns.",
+          whyIntro: "Most prompt problems can be improved with simple techniques. You will use these when you are:",
+          conceptsTitle: "Core Prompt Techniques",
+          whyItMatters: ["Writing first prompts", "Improving quality", "Reducing retries", "Teaching output patterns"],
+          concepts: [
+            {
+              title: "Zero-shot",
+              explanation: "Zero-shot means asking directly without examples.",
+              aiUseCase: "Use it for simple tasks where the format is obvious.",
+              plainExample: "Ask the model to summarize one support ticket in three bullets."
+            },
+            {
+              title: "Few-shot examples",
+              explanation: "Few-shot prompting gives the model examples of the input and output pattern you want.",
+              aiUseCase: "Use examples for classification, extraction, style matching, and tricky formatting.",
+              plainExample: "Show two labeled tickets before asking it to label a third.",
+              code: `Task: classify intent.\n\nExample 1:\nUser: I want my money back.\nIntent: refund_request\n\nExample 2:\nUser: Can I change my email?\nIntent: account_update\n\nUser: My card was charged twice.\nIntent:`
+            },
+            {
+              title: "COSTAR",
+              explanation: "COSTAR organizes Context, Objective, Style, Tone, Audience, and Response.",
+              aiUseCase: "Use it when a prompt is growing messy and needs structure.",
+              plainExample: "It turns 'write this better' into a complete task brief."
+            },
+            {
+              title: "Iterative refinement",
+              explanation: "Prompting is an engineering loop: test, inspect failures, adjust, and retest.",
+              aiUseCase: "Use small eval sets to improve prompts instead of guessing.",
+              plainExample: "If the model misses dates, add examples and a required date field."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using few-shot examples that conflict", better: "Curate examples carefully" },
+            { mistake: "Changing prompts without testing", better: "Keep sample inputs and compare outputs" },
+            { mistake: "Overcomplicating simple tasks", better: "Start zero-shot, then add structure only as needed" }
+          ],
+          checklist: ["Use zero-shot appropriately", "Create useful few-shot examples", "Apply COSTAR", "Run a refinement loop"]
+        }
+      },
+      {
+        n: "3.5",
+        title: "Applied prompt patterns",
+        items: ["Extraction (entities, dates, relationships)", "Classification (intent, sentiment, routing)", "Transformation (summarize, translate, reformat)", "Generation (reports, SQL, code)", "Decomposition (break complex queries into sub-prompts)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show prompt example",
+          hideCodeLabel: "Hide prompt example",
+          codeLabel: "Pattern example",
+          goal: "Recognize the main prompt patterns used in real AI products.",
+          whyIntro: "These patterns show up in almost every app. You will use them when you are:",
+          conceptsTitle: "Applied Patterns",
+          whyItMatters: ["Extracting data", "Routing requests", "Summarizing content", "Breaking down complex work"],
+          concepts: [
+            {
+              title: "Extraction",
+              explanation: "Extraction pulls structured fields from messy text.",
+              aiUseCase: "Extract names, dates, entities, claims, requirements, or action items.",
+              plainExample: "Turn an email into customer name, issue type, due date, and priority.",
+              code: `Extract JSON with fields:\n- customer_name\n- issue\n- due_date\n- priority\n\nIf a field is missing, use null.`
+            },
+            {
+              title: "Classification",
+              explanation: "Classification maps input into known labels.",
+              aiUseCase: "Route tickets, detect sentiment, choose tools, or flag risky content.",
+              plainExample: "Classify a request as billing, technical, sales, or legal."
+            },
+            {
+              title: "Transformation",
+              explanation: "Transformation rewrites content while preserving meaning.",
+              aiUseCase: "Summarize, translate, reformat, normalize, or simplify text.",
+              plainExample: "Turn a long meeting transcript into decisions and next steps."
+            },
+            {
+              title: "Decomposition",
+              explanation: "Decomposition breaks a complex task into smaller prompts or steps.",
+              aiUseCase: "Use it for research, planning, multi-document analysis, and agent workflows.",
+              plainExample: "First identify questions, then retrieve context, then answer each question."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using generation for everything", better: "Choose extraction, classification, transformation, or decomposition intentionally" },
+            { mistake: "Too many labels", better: "Start with a small label set and add only needed labels" },
+            { mistake: "No fallback for unknowns", better: "Allow unknown/null instead of forcing bad answers" }
+          ],
+          checklist: ["Use extraction prompts", "Use classification prompts", "Use transformation prompts", "Break complex tasks into steps"]
+        }
+      },
+      {
+        n: "3.6",
+        title: "Advanced reasoning techniques",
+        items: ["Chain of Thought — \"think step by step\"", "Self-Consistency — sample multiple paths, majority vote", "Self-Refine — generate, critique, refine loop", "Least-to-Most — decompose hard problems into ordered sub-problems", "Tree of Thought (research-flavoured; mention but don't drill)"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Use reasoning techniques carefully without making prompts slower, leakier, or harder to evaluate.",
+          whyIntro: "Reasoning patterns help on hard tasks, but they are not magic. You will use them when you are:",
+          conceptsTitle: "Reasoning Techniques",
+          whyItMatters: ["Solving hard tasks", "Improving reliability", "Reducing brittle answers", "Choosing when to decompose"],
+          concepts: [
+            {
+              title: "Chain of thought",
+              explanation: "Asking a model to reason step by step can improve difficult tasks, but production apps often should request concise reasoning or hidden reasoning instead of exposing every thought.",
+              aiUseCase: "Use reasoning for planning, math, coding, and multi-step decisions.",
+              plainExample: "Ask for a final answer plus a short explanation, not a long internal monologue."
+            },
+            {
+              title: "Self-consistency",
+              explanation: "Self-consistency samples multiple answers and chooses the strongest or most common result.",
+              aiUseCase: "Use it when accuracy is more important than latency or cost.",
+              plainExample: "Run three classifications and accept the majority label."
+            },
+            {
+              title: "Self-refine",
+              explanation: "Self-refine asks the model to draft, critique, and improve its answer.",
+              aiUseCase: "Use it for reports, code review, summaries, and long-form quality checks.",
+              plainExample: "Generate an answer, check it against requirements, then rewrite the weak parts."
+            },
+            {
+              title: "Least-to-most",
+              explanation: "Least-to-most solves smaller sub-problems before the main problem.",
+              aiUseCase: "Use it for multi-hop research, document comparison, and planning.",
+              plainExample: "Find the relevant policy first, then answer the employee's exact question."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Forcing step-by-step on simple tasks", better: "Use reasoning only when the task needs it" },
+            { mistake: "Exposing too much internal reasoning", better: "Return concise explanations and final answers" },
+            { mistake: "Ignoring cost", better: "Measure extra calls and latency" }
+          ],
+          checklist: ["Explain chain-of-thought tradeoffs", "Use self-consistency", "Use self-refine", "Use least-to-most decomposition"]
+        }
+      },
+      {
+        n: "3.7",
+        title: "Prompt management & cost in production",
+        items: ["Versioning prompts in code vs as managed resources", "A/B testing prompt variants", "AWS Bedrock Prompt Management for the lifecycle without code deploys", "Prompt caching — Anthropic cache_control and OpenAI's automatic cached input pricing (5–10× cost cuts on long system prompts)", "DSPy — programmatic prompt optimisation when you want the framework to tune your prompts for you (mention; depth is optional)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show config example",
+          hideCodeLabel: "Hide config example",
+          codeLabel: "Prompt config example",
+          goal: "Treat prompts like production assets: versioned, tested, measured, and cost-aware.",
+          whyIntro: "Prompts become product logic once users depend on them. You will use this when you are:",
+          conceptsTitle: "Production Prompt Management",
+          whyItMatters: ["Shipping prompt changes", "Running A/B tests", "Reducing token spend", "Debugging regressions"],
+          concepts: [
+            {
+              title: "Version prompts",
+              explanation: "Keep prompt versions tied to code, evals, and release notes so behavior changes are traceable.",
+              aiUseCase: "Roll back a bad prompt quickly when customer answers regress.",
+              plainExample: "Use prompt_id=refund_answer_v3 instead of editing a mystery string in production.",
+              code: `PROMPTS = {\n    \"refund_answer_v3\": {\n        \"model\": \"gpt-4.1-mini\",\n        \"temperature\": 0.2,\n        \"system\": \"Answer refund questions from policy context only.\"\n    }\n}`
+            },
+            {
+              title: "A/B prompt variants",
+              explanation: "A/B tests compare prompt versions with real metrics instead of opinions.",
+              aiUseCase: "Compare accuracy, user satisfaction, escalation rate, latency, and cost.",
+              plainExample: "Send 10% of traffic to a new prompt before replacing the old one."
+            },
+            {
+              title: "Prompt caching",
+              explanation: "Caching can reduce cost when large repeated instructions or context appear across requests.",
+              aiUseCase: "Cache long system prompts, policy blocks, tool instructions, or stable context.",
+              plainExample: "If every request includes the same 4,000-token policy, caching matters."
+            },
+            {
+              title: "DSPy and optimization",
+              explanation: "DSPy treats prompting more like a program that can be optimized against examples.",
+              aiUseCase: "Use it when manual prompt tuning becomes slow and you have examples to optimize against.",
+              plainExample: "Let the framework search for better instructions using your eval set."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Editing prompts without versions", better: "Store prompt IDs and changelogs" },
+            { mistake: "Optimizing only for quality", better: "Track quality, latency, and cost together" },
+            { mistake: "No rollback plan", better: "Keep the previous prompt ready" }
+          ],
+          checklist: ["Version prompts", "Run prompt A/B tests", "Understand prompt caching", "Know when DSPy is useful"]
+        }
+      },
+      {
+        n: "3.8",
+        title: "Frontend basics for AI demos",
+        items: ["HTML/CSS/JS fundamentals — forms, fetch, loading states, error states", "Streamlit for internal tools and quick evaluation UIs", "React/Next.js basics for a real chat experience", "Streaming UI patterns: token stream, cancel button, retry, citations, trace link"],
+        detail: {
+          duration: "60–90 min",
+          level: "Beginner",
+          status: "Required",
+          showCodeLabel: "Show UI example",
+          hideCodeLabel: "Hide UI example",
+          codeLabel: "Frontend example",
+          goal: "Build simple AI demos that feel usable instead of like raw scripts.",
+          whyIntro: "AI engineers often need to show workflows, not just backend code. You will use this when you are:",
+          conceptsTitle: "AI Demo Frontend Basics",
+          whyItMatters: ["Building demos", "Testing prompts with users", "Showing loading states", "Presenting citations and traces"],
+          concepts: [
+            {
+              title: "Forms and fetch",
+              explanation: "A basic UI needs an input, a submit action, a request to your backend, and a rendered response.",
+              aiUseCase: "Create a chat box, document Q&A form, or prompt testing panel.",
+              plainExample: "User types a question, your frontend calls /api/chat, then displays the answer.",
+              code: `async function ask(question) {\n  const res = await fetch('/api/chat', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ question })\n  });\n  return await res.json();\n}`
+            },
+            {
+              title: "Loading and error states",
+              explanation: "Users need to know when the model is working, when it failed, and what they can do next.",
+              aiUseCase: "Show loading, retry, timeout, and safe error messages.",
+              plainExample: "Replace a blank screen with 'Generating...' and a retry button."
+            },
+            {
+              title: "Streamlit vs React",
+              explanation: "Streamlit is fast for internal tools. React or Next.js is better for polished user-facing apps.",
+              aiUseCase: "Use Streamlit for eval dashboards and React for product demos.",
+              plainExample: "A researcher can use Streamlit; customers usually expect a real web app."
+            },
+            {
+              title: "Streaming UI patterns",
+              explanation: "Streaming UIs show partial text, let users cancel, retry failed responses, and inspect citations or traces.",
+              aiUseCase: "Make long LLM responses feel responsive and debuggable.",
+              plainExample: "Show answer text as it arrives, then attach sources and trace links below it."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "No loading state", better: "Show progress while the model responds" },
+            { mistake: "Showing raw errors", better: "Show safe user-facing errors and log details server-side" },
+            { mistake: "No citations or trace links", better: "Surface sources and debug metadata when useful" }
+          ],
+          checklist: ["Build a form with fetch", "Add loading and error states", "Know when to use Streamlit", "Design a basic streaming chat UI"]
+        }
+      }
     ]
   },
   {

@@ -1976,15 +1976,432 @@ assert build_context(["chunk one"]) == expected`
     summary: "The brain gets hands and legs.",
     endState: "You can build a single agent that searches the web, reads internal docs, queries a DB, and emails you a summary — and stops if it tries to do something dumb.",
     sections: [
-      { n: "5.1", title: "Function calling / tool use", items: ["Tool schemas (JSON Schema, Pydantic)", "How the LLM decides which tool to call", "Structured outputs for predictable downstream code", "Parsing tool-call responses", "Handling tool errors gracefully"] },
-      { n: "5.2", title: "Tool design principles", items: ["One tool, one job", "Clear docstrings — the LLM reads them", "Return structured data, not free text", "Fallbacks inside tools, not in the agent"] },
-      { n: "5.3", title: "MCP — Model Context Protocol", items: ["What MCP is and why it exists (universal adapter for tools)", "MCP servers vs MCP clients", "Using existing MCP servers (filesystem, GitHub, Slack)", "Building your own MCP server", "stdio vs HTTP transports", "MCP is moving fast — bookmark modelcontextprotocol.io and re-read the spec every few months; the registry, auth model, and resource semantics are still evolving"] },
-      { n: "5.4", title: "The ReAct pattern", items: ["Reasoning + Acting loop", "Thought → action → observation → thought", "Why \"thinking\" models exist", "When to force ReAct vs let the model decide"] },
-      { n: "5.5", title: "LangChain agents", items: ["create_agent — model + tools + middleware + store", "@tool(parse_docstring=True) for auto schemas", "Parallel tool execution with asyncio.gather", "Structured outputs via Pydantic"] },
-      { n: "5.6", title: "Human approval flows", items: ["Human-in-the-loop gates for sensitive operations", "Approval objects: who approved, what changed, when it expires", "Checkpointers and resumable execution after approval", "When to pause (DB writes, payments, emails, external messages, production changes)"] },
-      { n: "5.7", title: "Tool permissions and least privilege", items: ["Read-only vs write tools — separate them at the schema and IAM level", "Allow-lists for tables, directories, domains, and API operations", "Per-tool timeouts, max retries, max spend, and max records touched", "Audit logs for every tool call: input, output, actor, trace ID"] },
-      { n: "5.8", title: "Agent tracing and debugging", items: ["Trace every model call, tool call, handoff, retry, and guardrail decision", "Correlate trace IDs with backend logs and user sessions", "Inspect token usage, latency, tool failures, and bad routing decisions", "Use trace screenshots in portfolio demos and incident reviews"] },
-      { n: "5.9", title: "Computer use & app SDKs — agents with eyes and a mouse", items: ["Anthropic Computer Use — agent takes screenshots and drives a desktop/browser", "OpenAI Operator / Apps SDK — agent runs inside ChatGPT or controls a browser tab", "Browser-automation agents (Playwright + LLM, browser-use, Stagehand)", "When this is the right tool vs API integration", "Sandboxing, audit trails, and \"are you sure?\" gates — these agents can do real damage"] }
+      {
+        n: "5.1",
+        title: "Function calling / tool use",
+        items: ["Tool schemas (JSON Schema, Pydantic)", "How the LLM decides which tool to call", "Structured outputs for predictable downstream code", "Parsing tool-call responses", "Handling tool errors gracefully"],
+        detail: {
+          duration: "60–90 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show tool schema example",
+          hideCodeLabel: "Hide tool schema example",
+          codeLabel: "Tool schema example",
+          goal: "Understand how models call tools and how to turn tool outputs into reliable application behavior.",
+          whyIntro: "Tools let models act on real systems. You will use function calling when you are:",
+          conceptsTitle: "Tool Use Concepts",
+          whyItMatters: ["Calling APIs", "Querying databases", "Returning structured data", "Handling failures safely"],
+          concepts: [
+            {
+              title: "Tool schemas",
+              explanation: "A tool schema describes the tool name, purpose, inputs, and expected types.",
+              aiUseCase: "Give the model enough structure to call search, database, email, or file tools correctly.",
+              plainExample: "A weather tool needs a city and date, not a free-form paragraph.",
+              code: `class SearchInput(BaseModel):\n    query: str\n    top_k: int = 5\n\n# The model sees this as the contract for search.`
+            },
+            {
+              title: "Tool selection",
+              explanation: "The model chooses a tool based on the user request, tool names, descriptions, and schemas.",
+              aiUseCase: "Write tool descriptions that clearly say when to use the tool and when not to.",
+              plainExample: "A 'search_docs' tool should say it searches internal docs, not the public web."
+            },
+            {
+              title: "Structured outputs",
+              explanation: "Structured outputs make downstream code predictable after a model or tool call.",
+              aiUseCase: "Validate routing decisions, extracted fields, and tool arguments before taking action.",
+              plainExample: "Return {\"tool\": \"search_docs\", \"query\": \"refund policy\"}, not vague text."
+            },
+            {
+              title: "Tool errors",
+              explanation: "Tools fail because APIs time out, permissions block access, inputs are invalid, or data is missing.",
+              aiUseCase: "Return clear, safe errors to the agent and log detailed errors for engineers.",
+              plainExample: "If search times out, the agent should say it could not verify the answer, not invent one."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Vague tool schemas", better: "Use specific names, descriptions, and typed inputs" },
+            { mistake: "Letting tools return messy text", better: "Return structured data with status and errors" },
+            { mistake: "Ignoring failures", better: "Handle timeouts, invalid input, and permission errors" }
+          ],
+          checklist: ["Define typed tool schemas", "Explain tool selection", "Validate structured outputs", "Handle tool errors gracefully"]
+        }
+      },
+      {
+        n: "5.2",
+        title: "Tool design principles",
+        items: ["One tool, one job", "Clear docstrings — the LLM reads them", "Return structured data, not free text", "Fallbacks inside tools, not in the agent"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show tool example",
+          hideCodeLabel: "Hide tool example",
+          codeLabel: "Tool design example",
+          goal: "Design tools that are narrow, understandable, safe, and easy for an agent to use.",
+          whyIntro: "Bad tools make agents look unreliable. You will apply these principles when you are:",
+          conceptsTitle: "Tool Design Principles",
+          whyItMatters: ["Reducing wrong tool calls", "Improving reliability", "Making debugging easier", "Keeping side effects safe"],
+          concepts: [
+            {
+              title: "One tool, one job",
+              explanation: "A tool should perform one clear action instead of hiding a whole workflow behind a vague name.",
+              aiUseCase: "Separate search_docs, get_order_status, and send_email instead of one do_everything tool.",
+              plainExample: "The model can choose better when each tool has a clear purpose."
+            },
+            {
+              title: "Clear docstrings",
+              explanation: "The model reads tool descriptions, so the wording should explain inputs, outputs, and when to use it.",
+              aiUseCase: "Use docstrings as the model-facing instruction manual for the tool.",
+              plainExample: "Say 'Search internal HR policies' instead of 'Search stuff'.",
+              code: `def search_hr_policy(query: str) -> dict:\n    \"\"\"Search approved HR policy documents. Use only for HR-policy questions.\"\"\"\n    ...`
+            },
+            {
+              title: "Structured returns",
+              explanation: "Tools should return objects with fields like status, data, source, and error instead of loose paragraphs.",
+              aiUseCase: "Let the agent decide the next step based on predictable fields.",
+              plainExample: "Return status='not_found' so the agent can ask a follow-up question."
+            },
+            {
+              title: "Fallbacks inside tools",
+              explanation: "Tools should handle retries, defaults, and safe fallbacks internally where possible.",
+              aiUseCase: "Keep the agent focused on reasoning, not low-level API recovery.",
+              plainExample: "The search tool can retry once before telling the agent it failed."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Tools that do too much", better: "Split into small focused tools" },
+            { mistake: "Descriptions written for humans only", better: "Write docstrings the model can act on" },
+            { mistake: "Returning unstructured text", better: "Return typed fields and status values" }
+          ],
+          checklist: ["Design focused tools", "Write clear docstrings", "Return structured data", "Put fallbacks inside tools"]
+        }
+      },
+      {
+        n: "5.3",
+        title: "MCP — Model Context Protocol",
+        items: ["What MCP is and why it exists (universal adapter for tools)", "MCP servers vs MCP clients", "Using existing MCP servers (filesystem, GitHub, Slack)", "Building your own MCP server", "stdio vs HTTP transports", "MCP is moving fast — bookmark modelcontextprotocol.io and re-read the spec every few months; the registry, auth model, and resource semantics are still evolving"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Understand MCP as a standard way for agents and apps to discover and use external tools and resources.",
+          whyIntro: "MCP turns integrations into reusable agent infrastructure. You will use it when you are:",
+          conceptsTitle: "MCP Concepts",
+          whyItMatters: ["Connecting tools", "Reusing integrations", "Accessing files and apps", "Separating agent logic from tool servers"],
+          concepts: [
+            {
+              title: "Why MCP exists",
+              explanation: "MCP provides a common protocol so different agents can connect to tools, resources, and prompts without custom glue every time.",
+              aiUseCase: "Expose GitHub, Slack, databases, files, or internal systems through a standard interface.",
+              plainExample: "Instead of rebuilding a GitHub integration for every agent, connect to a GitHub MCP server."
+            },
+            {
+              title: "Servers and clients",
+              explanation: "An MCP server exposes capabilities. An MCP client connects to the server and lets the model use those capabilities.",
+              aiUseCase: "Run a filesystem server locally or an internal company tool server remotely.",
+              plainExample: "The agent app is the client; the tool provider is the server."
+            },
+            {
+              title: "Transports",
+              explanation: "MCP can run over transports such as stdio for local tools or HTTP-style transports for remote services.",
+              aiUseCase: "Use local stdio tools during development and networked transports for shared services.",
+              plainExample: "A local file tool can run beside your app; a company CRM tool may live behind an HTTP endpoint."
+            },
+            {
+              title: "Moving protocol surface",
+              explanation: "MCP is evolving, so auth, registry, resource patterns, and hosting practices may change.",
+              aiUseCase: "Treat MCP integrations like dependencies that need periodic review.",
+              plainExample: "Bookmark the official spec and re-check it before building a production server."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Treating MCP as an agent framework", better: "Use it as a tool/resource protocol" },
+            { mistake: "Ignoring auth and permissions", better: "Design access control per server and tool" },
+            { mistake: "Assuming the spec is frozen", better: "Revisit MCP docs as it evolves" }
+          ],
+          checklist: ["Explain MCP's purpose", "Differentiate client and server", "Compare stdio and HTTP transports", "Plan auth and permissions"]
+        }
+      },
+      {
+        n: "5.4",
+        title: "The ReAct pattern",
+        items: ["Reasoning + Acting loop", "Thought → action → observation → thought", "Why \"thinking\" models exist", "When to force ReAct vs let the model decide"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Understand the reasoning-action-observation loop behind many practical agents.",
+          whyIntro: "ReAct is the basic shape of tool-using agents. You will use it when you are:",
+          conceptsTitle: "ReAct Pattern",
+          whyItMatters: ["Planning tool calls", "Using observations", "Debugging loops", "Choosing agent control flow"],
+          concepts: [
+            {
+              title: "Reasoning plus acting",
+              explanation: "ReAct alternates between deciding what to do, calling a tool, reading the result, and deciding the next step.",
+              aiUseCase: "Use it for search, database lookup, file analysis, and multi-step support workflows.",
+              plainExample: "Question -> search docs -> read chunk -> maybe search again -> answer."
+            },
+            {
+              title: "Observation matters",
+              explanation: "The observation is the tool result the model uses to continue.",
+              aiUseCase: "Return concise observations that contain enough evidence for the next decision.",
+              plainExample: "A search tool should return top chunks and sources, not a vague 'found results'."
+            },
+            {
+              title: "Thinking models",
+              explanation: "Reasoning models can perform harder planning, but they still need good tools and guardrails.",
+              aiUseCase: "Use stronger reasoning for complex tool workflows, not for every simple lookup.",
+              plainExample: "A refund lookup does not need a high-cost reasoning model."
+            },
+            {
+              title: "When to force ReAct",
+              explanation: "Use explicit ReAct loops when you need inspectable steps. Let the model decide when the task is simple and low-risk.",
+              aiUseCase: "Use explicit loops for regulated, high-impact, or hard-to-debug workflows.",
+              plainExample: "A financial workflow should show which tool result caused the final answer."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Letting loops run forever", better: "Set max tool calls, retries, and stop conditions" },
+            { mistake: "Verbose observations", better: "Return compact, relevant tool results" },
+            { mistake: "Using ReAct for trivial tasks", better: "Use direct calls for simple workflows" }
+          ],
+          checklist: ["Explain ReAct", "Use observations correctly", "Set stop conditions", "Know when explicit loops help"]
+        }
+      },
+      {
+        n: "5.5",
+        title: "LangChain agents",
+        items: ["create_agent — model + tools + middleware + store", "@tool(parse_docstring=True) for auto schemas", "Parallel tool execution with asyncio.gather", "Structured outputs via Pydantic"],
+        detail: {
+          duration: "75–90 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show LangChain example",
+          hideCodeLabel: "Hide LangChain example",
+          codeLabel: "LangChain example",
+          goal: "Build a simple LangChain agent with typed tools, structured output, and predictable execution.",
+          whyIntro: "LangChain is common in agent prototypes and production stacks. You will use it when you are:",
+          conceptsTitle: "LangChain Agent Basics",
+          whyItMatters: ["Building tool agents", "Generating tool schemas", "Using middleware", "Returning typed outputs"],
+          concepts: [
+            {
+              title: "create_agent",
+              explanation: "create_agent combines a model, tools, instructions, middleware, and optional state or store.",
+              aiUseCase: "Build a single agent that can search docs, call APIs, or route user requests.",
+              plainExample: "Give the agent a model and a search tool, then ask it to answer from documents."
+            },
+            {
+              title: "Tool decorators",
+              explanation: "Decorators can turn normal Python functions into model-callable tools with schemas.",
+              aiUseCase: "Expose focused functions without hand-writing every JSON schema.",
+              plainExample: "A function named get_order_status becomes a tool the model can call.",
+              code: `@tool(parse_docstring=True)\ndef get_order_status(order_id: str) -> dict:\n    \"\"\"Look up one order by ID.\"\"\"\n    return {\"order_id\": order_id, \"status\": \"shipped\"}`
+            },
+            {
+              title: "Parallel tool execution",
+              explanation: "Independent tool calls can run concurrently to reduce latency.",
+              aiUseCase: "Search docs, fetch user profile, and query account status at the same time when they do not depend on each other.",
+              plainExample: "Three slow calls in parallel can feel like one slow call."
+            },
+            {
+              title: "Pydantic outputs",
+              explanation: "Typed output models make agent results easier to validate and use in code.",
+              aiUseCase: "Return final answers, citations, confidence, and next actions with a predictable shape.",
+              plainExample: "The UI can render citations because the agent always returns a citations array."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Too many tools at once", better: "Start with a small tool set and add as needed" },
+            { mistake: "No typed final output", better: "Use schemas for important results" },
+            { mistake: "Parallelizing dependent calls", better: "Only run independent tools concurrently" }
+          ],
+          checklist: ["Create a simple agent", "Decorate tools", "Use typed outputs", "Know when parallel tool calls help"]
+        }
+      },
+      {
+        n: "5.6",
+        title: "Human approval flows",
+        items: ["Human-in-the-loop gates for sensitive operations", "Approval objects: who approved, what changed, when it expires", "Checkpointers and resumable execution after approval", "When to pause (DB writes, payments, emails, external messages, production changes)"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Design approval gates so agents pause before high-impact actions and resume safely after approval.",
+          whyIntro: "Agents should not silently take risky actions. You will use approval flows when you are:",
+          conceptsTitle: "Human Approval Flows",
+          whyItMatters: ["Sending emails", "Writing databases", "Making payments", "Changing production systems"],
+          concepts: [
+            {
+              title: "Approval gates",
+              explanation: "An approval gate pauses the workflow before a sensitive operation.",
+              aiUseCase: "Require a human before sending external messages, charging money, deleting files, or changing records.",
+              plainExample: "Draft the email, show it to a user, then send only after approval."
+            },
+            {
+              title: "Approval objects",
+              explanation: "Approval records should capture who approved, what was approved, when it expires, and what changed.",
+              aiUseCase: "Create audit trails for compliance and incident review.",
+              plainExample: "Approval should attach to the exact email body, not just 'send something'."
+            },
+            {
+              title: "Resumable execution",
+              explanation: "Checkpointers let a workflow pause, persist state, and resume after approval.",
+              aiUseCase: "Use checkpointers for long-running agents and human-in-the-loop flows.",
+              plainExample: "The agent waits overnight for approval, then continues from the same state."
+            },
+            {
+              title: "When to pause",
+              explanation: "Pause before irreversible, externally visible, expensive, or permission-sensitive actions.",
+              aiUseCase: "Gate DB writes, payments, emails, Slack messages, file deletion, and production changes.",
+              plainExample: "Reading an invoice is fine; paying it needs approval."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Approving vague intent", better: "Approve the exact action payload" },
+            { mistake: "No expiry", better: "Expire stale approvals" },
+            { mistake: "No audit record", better: "Log actor, payload, timestamp, and trace ID" }
+          ],
+          checklist: ["Add approval gates", "Record approval objects", "Use resumable state", "Know which actions must pause"]
+        }
+      },
+      {
+        n: "5.7",
+        title: "Tool permissions and least privilege",
+        items: ["Read-only vs write tools — separate them at the schema and IAM level", "Allow-lists for tables, directories, domains, and API operations", "Per-tool timeouts, max retries, max spend, and max records touched", "Audit logs for every tool call: input, output, actor, trace ID"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Limit what each tool can do so agent mistakes are contained.",
+          whyIntro: "Least privilege is how agents stay useful without becoming dangerous. You will apply it when you are:",
+          conceptsTitle: "Tool Permissions",
+          whyItMatters: ["Protecting data", "Limiting blast radius", "Auditing actions", "Preventing runaway costs"],
+          concepts: [
+            {
+              title: "Read vs write tools",
+              explanation: "Separate read-only tools from tools that mutate state, and protect them differently.",
+              aiUseCase: "Let most users search docs, but restrict who can send messages or update records.",
+              plainExample: "search_orders is lower risk than refund_order."
+            },
+            {
+              title: "Allow-lists",
+              explanation: "Allow-lists restrict which tables, directories, domains, API methods, or resources a tool can touch.",
+              aiUseCase: "Prevent broad access even if the model asks for it.",
+              plainExample: "A SQL tool can query approved views only, not every database table."
+            },
+            {
+              title: "Limits and budgets",
+              explanation: "Each tool should have timeouts, retries, max records, max spend, and max calls per request.",
+              aiUseCase: "Stop loops, runaway queries, and expensive mistakes.",
+              plainExample: "A search tool should not retrieve 10,000 records because the model asked nicely."
+            },
+            {
+              title: "Audit logs",
+              explanation: "Log every tool call with input, output summary, actor, timestamp, and trace ID.",
+              aiUseCase: "Debug incidents and prove what the agent did.",
+              plainExample: "You should know exactly which tool call changed a customer record."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "One powerful admin tool", better: "Split tools by permission and risk" },
+            { mistake: "No hard limits", better: "Enforce caps inside tools" },
+            { mistake: "Logs without trace IDs", better: "Correlate tool calls with model traces and user sessions" }
+          ],
+          checklist: ["Separate read and write tools", "Use allow-lists", "Set per-tool limits", "Log every tool call"]
+        }
+      },
+      {
+        n: "5.8",
+        title: "Agent tracing and debugging",
+        items: ["Trace every model call, tool call, handoff, retry, and guardrail decision", "Correlate trace IDs with backend logs and user sessions", "Inspect token usage, latency, tool failures, and bad routing decisions", "Use trace screenshots in portfolio demos and incident reviews"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Trace agent decisions so failures can be reproduced, understood, and fixed.",
+          whyIntro: "Agents fail across prompts, tools, state, and permissions. You will use tracing when you are:",
+          conceptsTitle: "Agent Tracing",
+          whyItMatters: ["Debugging tool calls", "Finding cost spikes", "Investigating bad answers", "Showing portfolio evidence"],
+          concepts: [
+            {
+              title: "Trace the full path",
+              explanation: "A useful trace records model calls, tool calls, retries, guardrails, handoffs, inputs, outputs, and final answer.",
+              aiUseCase: "Understand exactly where an agent made a bad decision.",
+              plainExample: "The answer was wrong because the first tool returned stale data."
+            },
+            {
+              title: "Correlate IDs",
+              explanation: "Trace IDs should connect frontend requests, backend logs, tool logs, and model calls.",
+              aiUseCase: "Follow one user request across your whole system.",
+              plainExample: "A support ticket should link to the exact agent trace."
+            },
+            {
+              title: "Inspect cost and latency",
+              explanation: "Traces should show token usage, model latency, tool latency, retries, and failure points.",
+              aiUseCase: "Optimize slow or expensive workflows based on evidence.",
+              plainExample: "A single reranker call may be responsible for most latency."
+            },
+            {
+              title: "Use traces as artifacts",
+              explanation: "Good traces explain system behavior to engineers, reviewers, and incident teams.",
+              aiUseCase: "Include trace screenshots in demos and postmortems.",
+              plainExample: "A portfolio demo can show model call, tool call, citation, and final answer path."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only logging final answers", better: "Trace every important step" },
+            { mistake: "No redaction", better: "Redact secrets and sensitive user data in traces" },
+            { mistake: "Unlinked logs", better: "Use trace IDs across frontend, backend, tools, and evals" }
+          ],
+          checklist: ["Trace model and tool calls", "Correlate trace IDs", "Inspect token and latency costs", "Redact sensitive trace data"]
+        }
+      },
+      {
+        n: "5.9",
+        title: "Computer use & app SDKs — agents with eyes and a mouse",
+        items: ["Anthropic Computer Use — agent takes screenshots and drives a desktop/browser", "OpenAI Operator / Apps SDK — agent runs inside ChatGPT or controls a browser tab", "Browser-automation agents (Playwright + LLM, browser-use, Stagehand)", "When this is the right tool vs API integration", "Sandboxing, audit trails, and \"are you sure?\" gates — these agents can do real damage"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Know when visual/browser agents are useful and how to control their risk.",
+          whyIntro: "Computer-use agents interact with real interfaces, so mistakes are visible and costly. You will use them when you are:",
+          conceptsTitle: "Computer-Use Agent Basics",
+          whyItMatters: ["Automating legacy UIs", "Testing apps", "Using browser workflows", "Adding safety gates"],
+          concepts: [
+            {
+              title: "Agents with eyes",
+              explanation: "Computer-use agents observe screens or browser pages, then click, type, scroll, and inspect results.",
+              aiUseCase: "Automate workflows where no clean API exists.",
+              plainExample: "An agent can fill a web form when the vendor does not provide an API."
+            },
+            {
+              title: "Browser automation agents",
+              explanation: "Tools like Playwright plus LLMs, browser-use, and Stagehand combine deterministic browser control with model reasoning.",
+              aiUseCase: "Use them for testing, data entry, QA flows, and controlled browser tasks.",
+              plainExample: "The agent can open a dashboard, filter a table, and report visible status."
+            },
+            {
+              title: "API first when possible",
+              explanation: "APIs are usually faster, safer, cheaper, and easier to test than UI automation.",
+              aiUseCase: "Use computer use only when APIs are missing, incomplete, or unsuitable.",
+              plainExample: "Call the CRM API if it exists; use browser control only for gaps."
+            },
+            {
+              title: "Sandbox and approval",
+              explanation: "Computer-use agents can click destructive buttons, submit forms, and expose data, so they need sandboxing, audit trails, and confirmations.",
+              aiUseCase: "Require approval before sending, deleting, buying, or changing external state.",
+              plainExample: "Let the agent draft the form, but ask before it submits."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Using UI automation when an API exists", better: "Prefer APIs for reliability and safety" },
+            { mistake: "No confirmation before side effects", better: "Gate destructive or external actions" },
+            { mistake: "No sandbox", better: "Run agents in controlled environments with audit logs" }
+          ],
+          checklist: ["Explain computer-use agents", "Know browser automation use cases", "Prefer APIs when available", "Add sandboxing and approval gates"]
+        }
+      }
     ]
   },
   {

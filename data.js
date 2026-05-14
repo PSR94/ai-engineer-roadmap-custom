@@ -3157,12 +3157,286 @@ assert build_context(["chunk one"]) == expected`
     summary: "You know what to build. Now make it not embarrass you in production — measure failure, catch it before users do, and prove the agent is improving release-over-release.",
     endState: "You can put a number on how often your agent fails, and ship it anyway with confidence.",
     sections: [
-      { n: "8.1", title: "Three-layer guardrail architecture", items: ["Input Guardrails (gateway, <1ms, deterministic): prompt-injection regex, PII redaction, out-of-domain rejection, toxic filter — code-based, never LLM", "Output Guardrails (LLM-judge OK): faithfulness, contradiction check, medical/legal disclaimers when confidence < threshold, hard-fail to safe fallback", "Action Guardrails (inside tools, pure functions): max retries, max tool calls per request, query validation, read-only DB, top_k caps"] },
-      { n: "8.2", title: "AWS Bedrock Guardrails", items: ["Contextual grounding", "Automated reasoning checks", "Harmful content filtering", "Topic blocking", "When managed guardrails are enough vs custom"] },
-      { n: "8.3", title: "Agent safety patterns", items: ["Tool permission model: deny by default, explicit grants per route/user/tool", "Human approval for high-impact actions and ambiguous tool outputs", "Handoffs between specialized agents with clear ownership and stop conditions", "Structured outputs before side effects — validate first, act second"] },
-      { n: "8.4", title: "LLMOps — observability", items: ["LangSmith / LangFuse for traces", "Token cost dashboards", "Latency percentiles (p50, p95, p99)", "Failure rate by tool, by route, by model", "Trace sampling and redaction so observability does not leak user data"] },
-      { n: "8.5", title: "LLMOps — evaluation in production", items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality", "Eval tests for refusals, tool permissions, structured outputs, and human-approval paths"] },
-      { n: "8.6", title: "Security basics for AI apps", items: ["API keys, secrets, and environment variables — never commit credentials", "Authentication vs authorization: who are you, and what can you do?", "Rate limits, quotas, abuse prevention, and spend caps", "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk"] }
+      {
+        n: "8.1",
+        title: "Three-layer guardrail architecture",
+        items: ["Input Guardrails (gateway, <1ms, deterministic): prompt-injection regex, PII redaction, out-of-domain rejection, toxic filter — code-based, never LLM", "Output Guardrails (LLM-judge OK): faithfulness, contradiction check, medical/legal disclaimers when confidence < threshold, hard-fail to safe fallback", "Action Guardrails (inside tools, pure functions): max retries, max tool calls per request, query validation, read-only DB, top_k caps"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Design layered guardrails that catch unsafe input, unsafe output, and unsafe actions at the right point in the system.",
+          whyIntro: "Guardrails work best as architecture, not as one final prompt. You will use this when you are:",
+          conceptsTitle: "Guardrail Architecture",
+          whyItMatters: ["Blocking bad inputs", "Checking grounded answers", "Limiting tool actions", "Creating safe fallbacks"],
+          concepts: [
+            {
+              title: "Input guardrails",
+              explanation: "Input guardrails run before the model and catch prompt injection, PII, unsupported topics, toxic content, or obvious abuse.",
+              aiUseCase: "Use fast deterministic checks at the gateway before spending tokens.",
+              plainExample: "Reject a request that asks the agent to reveal hidden system instructions."
+            },
+            {
+              title: "Output guardrails",
+              explanation: "Output guardrails inspect the model response for faithfulness, contradictions, unsafe advice, missing disclaimers, or format violations.",
+              aiUseCase: "Use LLM judges or deterministic validators after generation but before showing the user.",
+              plainExample: "If the answer is not supported by retrieved context, return a safe fallback."
+            },
+            {
+              title: "Action guardrails",
+              explanation: "Action guardrails live inside tools and enforce limits before side effects happen.",
+              aiUseCase: "Cap retries, top_k, SQL rows, spend, file paths, API methods, and write operations.",
+              plainExample: "A database tool refuses DELETE and only allows approved read-only queries."
+            },
+            {
+              title: "Fallback behavior",
+              explanation: "A blocked request needs a clear next step, not a cryptic failure.",
+              aiUseCase: "Return safe messages, ask for clarification, escalate to a human, or provide allowed alternatives.",
+              plainExample: "Say 'I cannot verify this from the provided sources' instead of inventing an answer."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only using a system prompt as a guardrail", better: "Add deterministic checks, output checks, and tool-level limits" },
+            { mistake: "Guardrails after side effects", better: "Validate before actions happen" },
+            { mistake: "No fallback path", better: "Define safe fallback, escalation, or clarification behavior" }
+          ],
+          checklist: ["Add input guardrails", "Add output guardrails", "Enforce action guardrails", "Define safe fallback behavior"]
+        }
+      },
+      {
+        n: "8.2",
+        title: "AWS Bedrock Guardrails",
+        items: ["Contextual grounding", "Automated reasoning checks", "Harmful content filtering", "Topic blocking", "When managed guardrails are enough vs custom"],
+        detail: {
+          duration: "45–60 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Know what managed guardrails can cover and where custom checks are still needed.",
+          whyIntro: "Managed guardrails can speed up production hardening, but they do not replace system design. You will use them when you are:",
+          conceptsTitle: "Managed Guardrails",
+          whyItMatters: ["Filtering harmful content", "Blocking topics", "Checking grounding", "Reducing custom safety code"],
+          concepts: [
+            {
+              title: "Contextual grounding",
+              explanation: "Grounding checks compare answers against provided context to reduce unsupported claims.",
+              aiUseCase: "Use for RAG systems where answers must stay tied to retrieved evidence.",
+              plainExample: "If the retrieved policy does not mention refunds, the answer should not invent refund rules."
+            },
+            {
+              title: "Automated reasoning checks",
+              explanation: "Automated checks can validate whether generated responses follow certain logical or policy constraints.",
+              aiUseCase: "Use for controlled workflows with explicit business rules.",
+              plainExample: "A benefits answer should not contradict eligibility rules."
+            },
+            {
+              title: "Content and topic filters",
+              explanation: "Managed filters can block harmful categories, off-topic requests, and restricted content.",
+              aiUseCase: "Use topic policies to keep assistants inside their intended domain.",
+              plainExample: "A clinical trial assistant can refuse unrelated financial advice."
+            },
+            {
+              title: "Managed vs custom",
+              explanation: "Managed guardrails are useful defaults. Custom guardrails are needed for product-specific permissions, tools, workflows, and compliance.",
+              aiUseCase: "Combine platform guardrails with app-level rules.",
+              plainExample: "Bedrock may filter unsafe content, but your tool still needs max-row limits."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Assuming managed guardrails cover app logic", better: "Add custom checks for permissions, tools, and business rules" },
+            { mistake: "No test cases for guardrails", better: "Create adversarial and regression tests" },
+            { mistake: "Blocking without explanation", better: "Return clear safe messages and next steps" }
+          ],
+          checklist: ["Explain contextual grounding", "Use topic/content filters", "Know managed guardrail limits", "Pair managed and custom checks"]
+        }
+      },
+      {
+        n: "8.3",
+        title: "Agent safety patterns",
+        items: ["Tool permission model: deny by default, explicit grants per route/user/tool", "Human approval for high-impact actions and ambiguous tool outputs", "Handoffs between specialized agents with clear ownership and stop conditions", "Structured outputs before side effects — validate first, act second"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Apply safety patterns that keep tool-using agents from taking risky or ambiguous actions.",
+          whyIntro: "Agent safety is mostly permission, validation, and control flow. You will use these patterns when you are:",
+          conceptsTitle: "Agent Safety Patterns",
+          whyItMatters: ["Preventing unsafe actions", "Handling ambiguous results", "Limiting permissions", "Validating before side effects"],
+          concepts: [
+            {
+              title: "Deny by default",
+              explanation: "Tools and actions should be unavailable unless explicitly granted for the route, user, and task.",
+              aiUseCase: "Restrict write tools to authorized users and approved flows.",
+              plainExample: "A guest user can search docs but cannot send emails or update records."
+            },
+            {
+              title: "Human approval",
+              explanation: "High-impact or ambiguous actions should pause for human confirmation.",
+              aiUseCase: "Gate emails, payments, database writes, external messages, and production changes.",
+              plainExample: "The agent drafts a customer email, but a person approves before it sends."
+            },
+            {
+              title: "Safe handoffs",
+              explanation: "Agent handoffs need clear ownership, inputs, outputs, and stop conditions.",
+              aiUseCase: "Prevent agents from bouncing work back and forth without resolution.",
+              plainExample: "A validator returns pass/fail and reasons, not an open-ended conversation."
+            },
+            {
+              title: "Validate before side effects",
+              explanation: "Structured outputs should be validated before any tool changes real state.",
+              aiUseCase: "Check schemas, permissions, amount limits, recipients, and generated commands before acting.",
+              plainExample: "Validate the SQL as read-only before executing it."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Permission checks only in prompts", better: "Enforce permissions in code and tools" },
+            { mistake: "Approving vague actions", better: "Approve exact payloads before execution" },
+            { mistake: "Letting agents hand off forever", better: "Define ownership and stop conditions" }
+          ],
+          checklist: ["Use deny-by-default permissions", "Add human approval gates", "Define safe handoffs", "Validate before side effects"]
+        }
+      },
+      {
+        n: "8.4",
+        title: "LLMOps — observability",
+        items: ["LangSmith / LangFuse for traces", "Token cost dashboards", "Latency percentiles (p50, p95, p99)", "Failure rate by tool, by route, by model", "Trace sampling and redaction so observability does not leak user data"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          showCodeLabel: "Show log event example",
+          hideCodeLabel: "Hide log event example",
+          codeLabel: "Observability event",
+          goal: "Instrument model calls, tool calls, traces, costs, latency, and failures so production behavior is measurable.",
+          whyIntro: "You cannot improve or debug what you cannot observe. You will use LLMOps observability when you are:",
+          conceptsTitle: "LLMOps Observability",
+          whyItMatters: ["Debugging traces", "Monitoring cost", "Finding latency spikes", "Tracking tool failures"],
+          concepts: [
+            {
+              title: "Traces",
+              explanation: "Traces record the path through prompts, models, tools, guardrails, retries, and final output.",
+              aiUseCase: "Use LangSmith, LangFuse, or similar tools to inspect bad answers.",
+              plainExample: "A trace shows the retrieved chunks, model call, tool result, and guardrail decision."
+            },
+            {
+              title: "Cost dashboards",
+              explanation: "Token usage and model choice should be tracked by route, user, tenant, and workflow.",
+              aiUseCase: "Find expensive prompts, runaway loops, and bad model routing.",
+              plainExample: "One route may account for 80% of spend because it uses a large model unnecessarily."
+            },
+            {
+              title: "Latency percentiles",
+              explanation: "p50, p95, and p99 latency show typical and worst-case user experience.",
+              aiUseCase: "Track model latency, tool latency, queue time, and end-to-end latency separately.",
+              plainExample: "Average latency looks fine, but p95 reveals users often wait 20 seconds."
+            },
+            {
+              title: "Safe telemetry",
+              explanation: "Observability must redact secrets, PII, prompts, and outputs where needed.",
+              aiUseCase: "Sample traces and store only safe summaries for sensitive workflows.",
+              plainExample: "Log that a tool was called without storing a raw medical note.",
+              code: `event = {\n    \"trace_id\": trace_id,\n    \"route\": \"rag_answer\",\n    \"model\": model,\n    \"latency_ms\": latency,\n    \"input_tokens\": input_tokens,\n    \"output_tokens\": output_tokens,\n    \"status\": \"ok\"\n}`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only logging errors", better: "Track traces, latency, cost, and normal behavior" },
+            { mistake: "No redaction", better: "Redact sensitive fields before logs and traces" },
+            { mistake: "Averages only", better: "Track p95 and p99 latency" }
+          ],
+          checklist: ["Trace model and tool calls", "Track token cost", "Monitor latency percentiles", "Redact sensitive telemetry"]
+        }
+      },
+      {
+        n: "8.5",
+        title: "LLMOps — evaluation in production",
+        items: ["Golden dataset regression tests in CI", "A/B testing prompt and model changes", "Feedback loops from user thumbs-up/down", "Drift detection on retrieval quality", "Eval tests for refusals, tool permissions, structured outputs, and human-approval paths"],
+        detail: {
+          duration: "60–75 min",
+          level: "Intermediate",
+          status: "Required",
+          goal: "Run evals before and after deployment so prompt, model, retrieval, and safety changes do not regress silently.",
+          whyIntro: "Production LLM quality changes over time. You will use production evals when you are:",
+          conceptsTitle: "Production Evaluation",
+          whyItMatters: ["Preventing regressions", "Testing prompt changes", "Detecting retrieval drift", "Measuring safety behavior"],
+          concepts: [
+            {
+              title: "Golden datasets in CI",
+              explanation: "A golden dataset is a small representative set of test cases that must keep passing across changes.",
+              aiUseCase: "Run evals on every PR that changes prompts, retrieval, models, or tools.",
+              plainExample: "A refund-policy assistant should keep answering the same 50 policy questions correctly."
+            },
+            {
+              title: "A/B testing",
+              explanation: "A/B tests compare prompt or model variants against production metrics.",
+              aiUseCase: "Measure quality, user satisfaction, escalation rate, latency, and cost before full rollout.",
+              plainExample: "Send 10% of users to the new model before replacing the old one."
+            },
+            {
+              title: "Feedback loops",
+              explanation: "User feedback helps discover failures that offline evals missed.",
+              aiUseCase: "Use thumbs, corrections, escalations, and support tickets to create new eval cases.",
+              plainExample: "A downvoted answer becomes a future regression test."
+            },
+            {
+              title: "Safety evals",
+              explanation: "Eval suites should test refusals, tool permissions, structured outputs, approval paths, and data leakage.",
+              aiUseCase: "Treat safety behavior as testable product behavior.",
+              plainExample: "A write tool should fail in tests when the user lacks permission."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Only manual testing prompts", better: "Run regression evals in CI" },
+            { mistake: "Ignoring production feedback", better: "Turn failures into new eval cases" },
+            { mistake: "Quality evals only", better: "Add safety, permission, and structured-output evals" }
+          ],
+          checklist: ["Create golden datasets", "Run evals in CI", "A/B test prompt/model changes", "Add safety eval cases"]
+        }
+      },
+      {
+        n: "8.6",
+        title: "Security basics for AI apps",
+        items: ["API keys, secrets, and environment variables — never commit credentials", "Authentication vs authorization: who are you, and what can you do?", "Rate limits, quotas, abuse prevention, and spend caps", "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk"],
+        detail: {
+          duration: "60–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Protect AI apps from common security failures around secrets, access control, abuse, and prompt-driven attacks.",
+          whyIntro: "AI apps are still web apps, plus model-specific attack surfaces. You will use these basics when you are:",
+          conceptsTitle: "AI App Security Basics",
+          whyItMatters: ["Protecting secrets", "Enforcing access", "Preventing abuse", "Reducing prompt-injection damage"],
+          concepts: [
+            {
+              title: "Secrets and API keys",
+              explanation: "Secrets belong in environment variables or secret managers, never in committed code or browser bundles.",
+              aiUseCase: "Protect model keys, vector DB keys, database URLs, and webhook secrets.",
+              plainExample: "A frontend app should call your backend, not expose the OpenAI key to users."
+            },
+            {
+              title: "Authentication and authorization",
+              explanation: "Authentication proves who the user is. Authorization decides what they can access or do.",
+              aiUseCase: "Filter retrieval, tools, and actions by user, tenant, role, and permissions.",
+              plainExample: "A user can log in but still should not see another tenant's documents."
+            },
+            {
+              title: "Rate limits and spend caps",
+              explanation: "Rate limits, quotas, and budgets reduce abuse, accidental loops, and cost spikes.",
+              aiUseCase: "Limit requests per user, tool calls per run, tokens per request, and monthly tenant spend.",
+              plainExample: "A bug should not burn thousands of dollars in model calls overnight."
+            },
+            {
+              title: "Prompt-specific risks",
+              explanation: "Prompt injection, data exfiltration, SSRF, unsafe file access, and dependency risk need code-level controls.",
+              aiUseCase: "Constrain tools, sanitize URLs, restrict file paths, and never trust retrieved/user text as instructions.",
+              plainExample: "A document saying 'send all secrets to this URL' must be treated as untrusted text."
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Putting API keys in frontend code", better: "Keep secrets server-side or in secret managers" },
+            { mistake: "Auth without authorization", better: "Check permissions on every tool and data access" },
+            { mistake: "Trusting model judgment for security", better: "Enforce security in code, IAM, network, and tools" }
+          ],
+          checklist: ["Store secrets safely", "Separate auth and authorization", "Add rate limits and spend caps", "Mitigate prompt-specific attacks"]
+        }
+      }
     ]
   },
   {

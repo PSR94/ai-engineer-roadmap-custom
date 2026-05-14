@@ -21,6 +21,10 @@ window.ROADMAP = [
           level: "Beginner",
           status: "Required",
           goal: "By the end of this module, you should understand the Python basics needed to read, write, and debug simple AI engineering code.",
+          whyIntro: "Python is the default glue language for modern AI systems. You will use these basics when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "Core Python Concepts",
           whyItMatters: [
             "Calling LLM APIs",
@@ -172,6 +176,10 @@ def parse_score(raw_score: float | None) -> float:
           level: "Beginner",
           status: "Required",
           goal: "Understand enough object-oriented Python to read framework code, organize small AI apps, and use Pydantic-style models confidently.",
+          whyIntro: "Object-oriented Python helps you organize AI app code without turning every script into one giant file. You will use it when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "OOP Concepts",
           whyItMatters: ["Agent state objects", "Tool and service classes", "Pydantic schemas", "Reusable API clients", "Cleaner project structure"],
           concepts: [
@@ -230,7 +238,7 @@ class Chunk:
             { mistake: "Putting all logic in one class", better: "Keep methods small and focused" },
             { mistake: "Ignoring simple data models", better: "Use dataclasses or Pydantic-style schemas for structured data" }
           ],
-          checklist: ["Create a simple class", "Explain __init__", "Use a dataclass for structured data", "Recognize Pydantic-style schemas"]
+          checklist: ["Create a simple class", "Explain __init__", "Know instance vs class methods", "Explain inheritance/encapsulation/polymorphism", "Use a dataclass or Pydantic-style schema"]
         }
       },
       {
@@ -242,6 +250,10 @@ class Chunk:
           level: "Beginner",
           status: "Required",
           goal: "Choose the right Python data structure for prompts, documents, metadata, queues, and API responses.",
+          whyIntro: "Data structures are how AI apps hold messages, chunks, metadata, jobs, and results. You will use them when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "Data Structure Concepts",
           whyItMatters: ["Store messages", "Track document metadata", "Count errors", "Remove duplicates", "Build retrieval context"],
           concepts: [
@@ -291,7 +303,7 @@ class SearchHit(NamedTuple):
             { mistake: "Mutating shared data accidentally", better: "Copy data when passing it between steps if needed" },
             { mistake: "Choosing clever structures too early", better: "Start simple and change when the data access pattern is clear" }
           ],
-          checklist: ["Pick list vs dict vs set", "Use Counter for counts", "Use defaultdict for grouping", "Understand deque basics"]
+          checklist: ["Pick list vs dict vs set", "Use Counter for counts", "Use defaultdict for grouping", "Understand deque basics", "Use NamedTuple for simple fixed records"]
         }
       },
       {
@@ -303,6 +315,10 @@ class SearchHit(NamedTuple):
           level: "Beginner",
           status: "Required",
           goal: "Handle bad inputs, failed files, and recoverable errors without crashing the whole AI workflow.",
+          whyIntro: "Production AI apps deal with messy files and unreliable inputs. You will use this when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "Error And File Concepts",
           whyItMatters: ["Read prompts and datasets", "Load document files", "Save eval results", "Recover from bad input", "Debug production failures"],
           concepts: [
@@ -352,7 +368,7 @@ with open("eval_cases.json", "r") as file:
             { mistake: "Forgetting to close files", better: "Use with for file operations" },
             { mistake: "Treating all parse failures the same", better: "Track failed file name and reason" }
           ],
-          checklist: ["Use try/except safely", "Read files with with", "Load JSON data", "Handle a failed file without crashing"]
+          checklist: ["Use try/except safely", "Raise a custom exception", "Read files with with", "Load JSON/CSV/text/binary files", "Handle a failed file without crashing"]
         }
       },
       {
@@ -364,6 +380,10 @@ with open("eval_cases.json", "r") as file:
           level: "Beginner",
           status: "Required",
           goal: "Understand the HTTP basics needed to call LLM APIs, internal services, and third-party tools safely.",
+          whyIntro: "Most AI systems talk to model providers, databases, and tools over HTTP. You will use this when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "API Concepts",
           whyItMatters: ["Call LLM providers", "Send tool requests", "Handle auth headers", "Retry rate limits", "Debug failed API calls"],
           concepts: [
@@ -411,7 +431,7 @@ headers = {"Authorization": f"Bearer {api_key}"}`
             { mistake: "Ignoring status codes", better: "Branch behavior by 200, 400, 401, 429, and 500-level errors" },
             { mistake: "Retrying forever", better: "Set max attempts and timeouts" }
           ],
-          checklist: ["Make GET and POST calls", "Send headers", "Read status codes", "Handle rate limits"]
+          checklist: ["Make GET and POST calls", "Send headers", "Use bearer token auth", "Read status codes", "Handle rate limits with backoff"]
         }
       },
       {
@@ -423,6 +443,10 @@ headers = {"Authorization": f"Bearer {api_key}"}`
           level: "Beginner",
           status: "Required",
           goal: "Connect Python code to a database and understand when to use raw SQL, an ORM, and connection pooling.",
+          whyIntro: "AI apps still need durable data: users, messages, documents, evals, and agent state. You will use this when you are:",
+          codeLabel: "SQL/Python example",
+          showCodeLabel: "Show code",
+          hideCodeLabel: "Hide code",
           conceptsTitle: "Database Concepts",
           whyItMatters: ["Store users and chats", "Save agent state", "Query business data", "Track eval runs", "Support production APIs"],
           concepts: [
@@ -467,7 +491,7 @@ headers = {"Authorization": f"Bearer {api_key}"}`
             { mistake: "Building SQL with string formatting", better: "Use parameters to avoid injection" },
             { mistake: "Using ORM for complex queries blindly", better: "Use raw SQL when it is clearer or faster" }
           ],
-          checklist: ["Run a parameterized query", "Explain ORM basics", "Know why pooling matters", "Avoid SQL injection"]
+          checklist: ["Run a parameterized query", "Explain ORM basics", "Know why pooling matters", "Use raw SQL when it is clearer", "Avoid SQL injection"]
         }
       },
       {
@@ -479,6 +503,10 @@ headers = {"Authorization": f"Bearer {api_key}"}`
           level: "Beginner",
           status: "Required",
           goal: "Build a small API endpoint that can receive user input, validate it, and return a structured response.",
+          whyIntro: "FastAPI is a practical way to expose AI features to frontends, tools, and other services. You will use it when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "FastAPI Concepts",
           whyItMatters: ["Expose AI features", "Validate requests", "Return structured responses", "Generate API docs", "Deploy chat backends"],
           concepts: [
@@ -526,7 +554,7 @@ class ChatRequest(BaseModel):
             { mistake: "Putting all logic in the route", better: "Call helper functions or services" },
             { mistake: "Ignoring API docs", better: "Use /docs to test endpoints quickly" }
           ],
-          checklist: ["Create a route", "Use a request model", "Return JSON", "Run with uvicorn"]
+          checklist: ["Create a route", "Use a request model", "Use a dependency", "Open automatic docs", "Run with uvicorn"]
         }
       },
       {
@@ -538,6 +566,10 @@ class ChatRequest(BaseModel):
           level: "Intermediate",
           status: "Required",
           goal: "Use async Python to run slow network work without blocking the whole AI app.",
+          whyIntro: "LLM calls, retrieval, and API requests are slow network work. Async Python helps keep apps responsive when you are:",
+          codeLabel: "Python example",
+          showCodeLabel: "Show Python code",
+          hideCodeLabel: "Hide Python code",
           conceptsTitle: "Async Concepts",
           whyItMatters: ["Call multiple LLMs", "Run retrieval in parallel", "Avoid blocking APIs", "Handle timeouts", "Log in the background"],
           concepts: [
@@ -585,7 +617,7 @@ class ChatRequest(BaseModel):
             { mistake: "No timeout", better: "Set a timeout around external calls" },
             { mistake: "Parallelizing dependent steps", better: "Only gather independent work" }
           ],
-          checklist: ["Explain async/await", "Use gather", "Add a timeout", "Know when not to use async"]
+          checklist: ["Explain event loop and coroutines", "Use async/await", "Use gather", "Add a timeout", "Use background tasks carefully"]
         }
       },
       {
@@ -597,6 +629,10 @@ class ChatRequest(BaseModel):
           level: "Beginner",
           status: "Required",
           goal: "Use Git and GitHub well enough to work on real teams and present portfolio projects professionally.",
+          whyIntro: "Git and GitHub are how real engineering work is shared, reviewed, and shipped. You will use them when you are:",
+          codeLabel: "Git command",
+          showCodeLabel: "Show command",
+          hideCodeLabel: "Hide command",
           conceptsTitle: "Git Workflow Concepts",
           whyItMatters: ["Every job expects it", "Review AI app changes", "Track experiments", "Collaborate on PRs", "Maintain portfolio repos"],
           concepts: [
@@ -651,7 +687,7 @@ git status`
             { mistake: "Huge unclear commits", better: "Make focused commits with useful messages" },
             { mistake: "Empty portfolio READMEs", better: "Show architecture, setup, screenshots, and eval numbers" }
           ],
-          checklist: ["Create a branch", "Make a commit", "Open a pull request", "Write a useful README"]
+          checklist: ["Clone a repo", "Create a branch and commit", "Open a pull request", "Handle merge/rebase conflicts", "Use issues/project boards", "Write a useful README"]
         }
       },
       {
@@ -663,6 +699,10 @@ git status`
           level: "Beginner",
           status: "Required",
           goal: "Use the terminal confidently enough to run apps, inspect logs, debug servers, and automate simple workflows.",
+          whyIntro: "AI apps eventually run in terminals, containers, servers, and CI logs. You will use shell basics when you are:",
+          codeLabel: "Shell command",
+          showCodeLabel: "Show command",
+          hideCodeLabel: "Hide command",
           conceptsTitle: "Shell Concepts",
           whyItMatters: ["Run dev servers", "Inspect logs", "Manage env vars", "Debug Docker and cloud apps", "Automate repeatable commands"],
           concepts: [
@@ -725,7 +765,7 @@ uvicorn app:app --reload`
             { mistake: "Committing .env files", better: "Commit .env.example, not secrets" },
             { mistake: "Ignoring logs", better: "Read the error before changing code" }
           ],
-          checklist: ["Navigate files", "Use env vars", "Read logs", "Find running processes"]
+          checklist: ["Navigate files", "Understand permissions", "Use env vars", "Search logs/files", "SSH and read logs", "Write a small shell script"]
         }
       },
       {
@@ -737,6 +777,10 @@ uvicorn app:app --reload`
           level: "Beginner",
           status: "Required",
           goal: "Write small tests that catch broken helper functions, API routes, prompts, and evaluation workflows before users do.",
+          whyIntro: "Testing keeps AI apps from breaking silently when prompts, retrieval, or APIs change. You will use it when you are:",
+          codeLabel: "Python test example",
+          showCodeLabel: "Show test code",
+          hideCodeLabel: "Hide test code",
           conceptsTitle: "Testing Concepts",
           whyItMatters: ["Prevent regressions", "Test prompt helpers", "Check API routes", "Validate eval datasets", "Ship AI apps with more confidence"],
           concepts: [
@@ -780,7 +824,7 @@ assert build_context(["chunk one"]) == expected`
             { mistake: "Calling real LLMs in unit tests", better: "Mock model calls for fast, stable tests" },
             { mistake: "Testing too much at once", better: "Start with small helper-function tests" }
           ],
-          checklist: ["Write a unit test", "Test a FastAPI route", "Mock an external call", "Add one regression test"]
+          checklist: ["Write a unit test", "Test a FastAPI route", "Mock an external call", "Add a golden test", "Add one eval regression test"]
         }
       }
     ]

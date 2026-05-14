@@ -10,15 +10,15 @@ function CodeBlock({ code, label }) {
   );
 }
 
-function PythonCodeReveal({ code }) {
+function CodeReveal({ code, showLabel = 'Show code', hideLabel = 'Hide code', codeLabel = 'Example' }) {
   const [open, setOpen] = useState(false);
   if (!code) return null;
   return (
     <details className="code-reveal" onToggle={e => setOpen(e.currentTarget.open)}>
       <summary className="code-reveal__summary">
-        <span>{open ? 'Hide Python code' : 'Show Python code'}</span>
+        <span>{open ? hideLabel : showLabel}</span>
       </summary>
-      <CodeBlock label="Python example" code={code} />
+      <CodeBlock label={codeLabel} code={code} />
     </details>
   );
 }
@@ -33,7 +33,7 @@ function DetailSection({ eyebrow, title, children }) {
   );
 }
 
-function ConceptCard({ concept, index }) {
+function ConceptCard({ concept, index, detail }) {
   return (
     <details className="concept-card" open={index === 0}>
       <summary className="concept-card__topline">
@@ -53,7 +53,11 @@ function ConceptCard({ concept, index }) {
             <p>{concept.plainExample}</p>
           </div>
         ) : null}
-        <PythonCodeReveal code={concept.code} />
+        <CodeReveal
+          code={concept.code}
+          showLabel={concept.showCodeLabel || detail.showCodeLabel}
+          hideLabel={concept.hideCodeLabel || detail.hideCodeLabel}
+          codeLabel={concept.codeLabel || detail.codeLabel} />
       </div>
     </details>
   );
@@ -95,7 +99,7 @@ function ModuleDetail({ section }) {
 
       <DetailSection title="Why This Matters For AI Engineering">
         <p className="module-detail__intro">
-          Python is the default glue language for modern AI systems. You will use these basics when you are:
+          {detail.whyIntro || 'You will use this in practical AI engineering work when you are:'}
         </p>
         <ul className="module-detail__pill-list">
           {detail.whyItMatters.map((item, i) => <li key={i}>{item}</li>)}
@@ -105,7 +109,7 @@ function ModuleDetail({ section }) {
       <DetailSection eyebrow="Concepts" title={detail.conceptsTitle || "Key Concepts"}>
         <div className="concept-grid">
           {detail.concepts.map((concept, i) => (
-            <ConceptCard key={concept.title} concept={concept} index={i} />
+            <ConceptCard key={concept.title} concept={concept} index={i} detail={detail} />
           ))}
         </div>
       </DetailSection>

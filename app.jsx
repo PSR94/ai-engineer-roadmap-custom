@@ -666,7 +666,6 @@ function App() {
             </div>
             <div className="phase__body">
               <h2 className="phase__title">
-                <span className="phase__title-accent" data-color={phase.color} />
                 {phase.title}
               </h2>
               <p className="phase__summary">{phase.summary}</p>

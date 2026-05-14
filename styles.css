@@ -972,6 +972,9 @@ body::before {
 .concept-card__topline::-webkit-details-marker {
   display: none;
 }
+.concept-card__topline::marker {
+  content: '';
+}
 .concept-card__topline:hover {
   background: color-mix(in srgb, var(--fg) 4%, transparent);
 }
@@ -1083,6 +1086,9 @@ body::before {
 }
 .code-reveal__summary::-webkit-details-marker {
   display: none;
+}
+.code-reveal__summary::marker {
+  content: '';
 }
 .code-reveal__summary::before {
   content: '+';

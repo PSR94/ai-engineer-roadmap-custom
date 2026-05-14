@@ -953,7 +953,7 @@ assert build_context(["chunk one"]) == expected`
     weeksDetail: "1 week · 6 modules",
     difficulty: 1,
     summary: "Conceptual phase. Almost no code. Where the brain-in-a-windowless-room analogy lives, and where most \"why is my agent broken\" questions get answered six months later.",
-    endState: "You can explain to a non-technical PM why ChatGPT made up a fact, and tell a hiring panel which model to pick for which job — backed by benchmarks, not vibes.",
+    endState: "You can explain to a non-technical PM why ChatGPT made up a fact, and tell a hiring panel which model to pick for which job — backed by benchmarks, not guesswork.",
     sections: [
       {
         n: "2.1",
@@ -1716,7 +1716,7 @@ class TicketRoute(BaseModel):
     weeksDetail: "5 weeks · 10 modules",
     difficulty: 4,
     summary: "The longest phase. RAG looks simple in tutorials and is brutal in production.",
-    endState: "You can build a RAG system, measure why it's wrong, and fix it with data instead of vibes.",
+    endState: "You can build a RAG system, measure why it's wrong, and fix it with data instead of guesswork.",
     sections: [
       {
         n: "4.1",
@@ -2231,7 +2231,7 @@ class TicketRoute(BaseModel):
     weeksDetail: "4 weeks · 9 modules",
     difficulty: 4,
     summary: "The brain gets hands and legs.",
-    endState: "You can build a single agent that searches the web, reads internal docs, queries a DB, and emails you a summary — and stops if it tries to do something dumb.",
+    endState: "You can build a single agent that searches the web, reads internal docs, queries a DB, and emails you a summary — and stops before taking unsafe or low-confidence actions.",
     sections: [
       {
         n: "5.1",

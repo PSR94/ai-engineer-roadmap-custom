@@ -528,6 +528,10 @@ function App() {
   const scrollToAgenda = () => scrollToElement(agendaRef.current, 24, 72, false);
 
   const totalSections = window.ROADMAP.reduce((a, p) => a + p.sections.length, 0);
+  const totalWeeks = window.ROADMAP.reduce((max, phase) => {
+    const matches = [...phase.weeks.matchAll(/\d+/g)].map(match => Number(match[0]));
+    return Math.max(max, ...matches);
+  }, 0);
 
   return (
     <React.Fragment>
@@ -538,7 +542,7 @@ function App() {
         </div>
         <div className="nav__right">
           <div className="nav__meta" aria-hidden="true">
-            <span><b>26</b> weeks</span>
+            <span><b>{totalWeeks}</b> weeks</span>
             <span><b>9</b> phases</span>
             <span><b>{totalSections}</b> modules</span>
           </div>
@@ -576,7 +580,7 @@ function App() {
         <div className="hero__blob-3" />
         <div className="hero__eyebrow">
           <span className="hero__eyebrow-dot" />
-          The 2026 Edition · 26 Weeks · 9 Phases
+          The 2026 Edition · {totalWeeks} Weeks · 9 Phases
         </div>
         <h1 className="hero__title">
           The only roadmap<br />
@@ -584,7 +588,7 @@ function App() {
           <span className="hero__title-100x">100× AI Engineer</span> <em>in 2026.</em>
         </h1>
         <p className="hero__sub">
-          A complete, production-grade journey from <em>script kid to agent engineer</em>.
+          A complete, production-grade journey from builder basics to agent engineering.
           Every module grounded in real enterprise AI engineering — from Python fundamentals
           all the way to multi-agent systems shipping in regulated domains.
         </p>
@@ -604,7 +608,7 @@ function App() {
             <div className="hero__stat-label">Modules</div>
           </div>
           <div>
-            <div className="hero__stat-num">26</div>
+            <div className="hero__stat-num">{totalWeeks}</div>
             <div className="hero__stat-label">Weeks</div>
           </div>
         </div>
@@ -715,7 +719,7 @@ function App() {
         <h2 className="footer__title">
           The journey ends where the <em>real work</em> begins.
         </h2>
-        <div className="footer__meta">26 weeks · 9 phases · {totalSections} modules · one engineer</div>
+        <div className="footer__meta">{totalWeeks} weeks · 9 phases · {totalSections} modules · one engineer</div>
       </footer>
     </React.Fragment>
   );

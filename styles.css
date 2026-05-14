@@ -573,19 +573,19 @@ body::before {
 }
 
 /* ============ PHASES ============ */
-.phases { padding: 0 8vw 12vh; position: relative; z-index: 2; }
+.phases { padding: 0 6vw 10vh; position: relative; z-index: 2; }
 .phase {
-  padding: 7vh 0 7vh;
+  padding: 4.5vh 0 5vh;
   border-top: 1px solid var(--line);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(220px, 300px) 1fr;
-  gap: 44px;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 28px;
   scroll-margin-top: 56px;
   content-visibility: auto;
   contain-intrinsic-size: 1px 900px;
 }
-.phase:first-of-type { border-top: none; padding-top: 6vh; }
+.phase:first-of-type { border-top: none; padding-top: 3.5vh; }
 .phase__index {
   position: sticky; top: 88px;
   align-self: start; height: max-content;
@@ -711,23 +711,24 @@ body::before {
 
 .phase__body { padding-top: 0; min-width: 0; }
 .phase__title {
-  font-size: clamp(34px, 4.2vw, 56px);
+  font-size: clamp(32px, 2.55vw, 36px);
   font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-  max-width: 18ch; color: var(--fg);
-  text-wrap: balance;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  max-width: none; color: var(--fg);
+  text-wrap: normal;
 }
 
 .phase__summary {
-  margin-top: 14px;
-  font-size: 16px; line-height: 1.45;
-  color: var(--fg-dim); max-width: 86ch;
+  margin-top: 6px;
+  font-size: 14px; line-height: 1.32;
+  color: var(--fg-dim); max-width: none;
+  text-wrap: pretty;
 }
 
 /* ============ TABBOX ============ */
 .tabbox {
-  margin-top: 30px;
+  margin-top: 22px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -1341,7 +1342,8 @@ body::before {
 
 @media (max-width: 1100px) {
   .agenda__grid--phases { grid-template-columns: repeat(3, 1fr); }
-  .phase { grid-template-columns: minmax(200px, 220px) 1fr; gap: 32px; }
+  .phase { grid-template-columns: minmax(160px, 185px) 1fr; gap: 22px; }
+  .phase__title { font-size: clamp(30px, 3.2vw, 34px); }
   .tabbox { grid-template-columns: 240px 1fr; }
 }
 @media (max-width: 900px) {
@@ -1425,17 +1427,17 @@ body::before {
   .agenda__tile-title { font-size: 15px; margin-top: 24px; }
   .phase {
     grid-template-columns: 1fr;
-    gap: 24px;
-    padding: 44px 0 40px;
+    gap: 18px;
+    padding: 34px 0 34px;
     scroll-margin-top: 16px;
   }
-  .phase:first-of-type { padding-top: 26px; }
+  .phase:first-of-type { padding-top: 22px; }
   .tabbox { box-shadow: none; }
   .tabbox__panel-content { animation: none; }
   .phase__index { position: static; }
   .phase__num { font-size: 72px; }
-  .phase__title { font-size: clamp(30px, 9vw, 42px); max-width: 100%; }
-  .phase__summary { margin-top: 10px; font-size: 15px; line-height: 1.45; max-width: 100%; }
+  .phase__title { font-size: clamp(29px, 8vw, 38px); max-width: 100%; line-height: 1.02; }
+  .phase__summary { margin-top: 7px; font-size: 14.5px; line-height: 1.35; max-width: 100%; }
   .phase__weeks-block { margin-top: 22px; padding: 18px; }
   .phase__weeks { font-size: 30px; }
   .module-detail__header {

@@ -35,7 +35,7 @@ function DetailSection({ eyebrow, title, children }) {
 
 function ConceptCard({ concept, index, detail }) {
   return (
-    <details className="concept-card" open={index === 0}>
+    <details className="concept-card">
       <summary className="concept-card__topline">
         <span className="concept-card__index">{String(index + 1).padStart(2, '0')}</span>
         <h5 className="concept-card__title">{concept.title}</h5>

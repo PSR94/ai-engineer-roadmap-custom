@@ -3,13 +3,14 @@ window.PHASE_COLORS = ["teal-deep", "teal", "purple", "pink", "emerald", "amber"
 window.ROADMAP = [
   {
     id: 1,
-    title: "Python Foundations",
-    short: "Python + Engineering Basics",
+    title: "Python & Backend Foundations",
+    short: "Python + Backend Basics",
     color: "teal-deep",
     weeks: "Weeks 1–3",
-    weeksDetail: "3 weeks · 11 modules",
+    weeksDetail: "3 weeks · 12 modules",
     difficulty: 2,
-    summary: "Every agent framework runs on Python. Skip this and everything later breaks in mysterious ways.",
+    difficultyNote: "If you are new to programming, stretch this phase to 4–5 weeks.",
+    summary: "The Python, API, environment, testing, and async basics every AI backend needs.",
     endState: "You can build a FastAPI endpoint that calls three different LLMs in parallel, times out the slow one, and logs the result without blocking the response.",
     sections: [
       {
@@ -308,19 +309,19 @@ class SearchHit(NamedTuple):
       },
       {
         n: "1.4",
-        title: "Error & File Handling",
-        items: ["try/except/finally", "Custom exception classes", "Context managers (with, contextlib)", "Reading/writing JSON, CSV, plain text, binary"],
+        title: "Error Handling, Files, and Logging",
+        items: ["try/except/finally", "Custom exception classes", "Context managers (with, contextlib)", "Reading/writing JSON, CSV, plain text, binary", "Logging enough context to debug failures"],
         detail: {
           duration: "45–75 min",
           level: "Beginner",
           status: "Required",
-          goal: "Handle bad inputs, failed files, and recoverable errors without crashing the whole AI workflow.",
+          goal: "Handle bad inputs, failed files, and recoverable errors while logging enough context to debug the workflow.",
           whyIntro: "Production AI apps deal with messy files and unreliable inputs. You will use this when you are:",
           codeLabel: "Python example",
           showCodeLabel: "Show Python code",
           hideCodeLabel: "Hide Python code",
-          conceptsTitle: "Error And File Concepts",
-          whyItMatters: ["Read prompts and datasets", "Load document files", "Save eval results", "Recover from bad input", "Debug production failures"],
+          conceptsTitle: "Error, File, And Logging Concepts",
+          whyItMatters: ["Read prompts and datasets", "Load document files", "Save eval results", "Recover from bad input", "Debug production failures", "Understand app logs"],
           concepts: [
             {
               title: "try / except / finally",
@@ -361,18 +362,105 @@ if not prompt.strip():
 
 with open("eval_cases.json", "r") as file:
     cases = json.load(file)`
+            },
+            {
+              title: "Logging basics",
+              explanation: "Logging records what happened with enough context to debug later. Use logs instead of random print statements once code becomes an app.",
+              aiUseCase: "Log request IDs, provider names, latency, timeout reasons, and failed file names without leaking secrets.",
+              plainExample: "If a model call times out in production, the log should tell you which provider failed and how long it waited.",
+              code: `import logging
+
+logger = logging.getLogger(__name__)
+
+logger.info("model_call_finished", extra={
+    "provider": "openai",
+    "latency_ms": 830,
+})`
             }
           ],
           commonMistakes: [
             { mistake: "Catching every error silently", better: "Log enough detail to debug the failure" },
             { mistake: "Forgetting to close files", better: "Use with for file operations" },
-            { mistake: "Treating all parse failures the same", better: "Track failed file name and reason" }
+            { mistake: "Treating all parse failures the same", better: "Track failed file name and reason" },
+            { mistake: "Logging secrets", better: "Log request IDs and safe metadata, not API keys or user secrets" }
           ],
-          checklist: ["Use try/except safely", "Raise a custom exception", "Read files with with", "Load JSON/CSV/text/binary files", "Handle a failed file without crashing"]
+          checklist: ["Use try/except safely", "Raise a custom exception", "Read files with with", "Load JSON/CSV/text/binary files", "Log useful failure context", "Handle a failed file without crashing"]
         }
       },
       {
         n: "1.5",
+        title: "Python Project Setup & Developer Workflow",
+        items: ["Virtual environments with venv, uv, or Poetry", "Dependency files and reproducible installs", ".env files, environment variables, and secrets", "Basic app folder structure", "Running scripts vs modules vs local servers"],
+        detail: {
+          duration: "45–75 min",
+          level: "Beginner",
+          status: "Required",
+          goal: "Set up a Python project so dependencies, secrets, local commands, and app structure are clear before AI code gets complicated.",
+          whyIntro: "AI apps fail quickly when project setup is messy. You will use this when you are:",
+          codeLabel: "Project command",
+          showCodeLabel: "Show command",
+          hideCodeLabel: "Hide command",
+          conceptsTitle: "Project Workflow Concepts",
+          whyItMatters: ["Create isolated environments", "Install model SDKs safely", "Keep secrets out of Git", "Organize FastAPI apps", "Run scripts and servers consistently"],
+          concepts: [
+            {
+              title: "Virtual environments",
+              explanation: "A virtual environment gives each project its own Python packages so one app does not break another.",
+              aiUseCase: "Install FastAPI, model SDKs, database clients, and test tools without polluting your global Python setup.",
+              plainExample: "Your RAG app can use one package version while another project uses a different version.",
+              code: `python -m venv .venv
+source .venv/bin/activate
+python -m pip install fastapi uvicorn`
+            },
+            {
+              title: "Dependencies with pip, uv, or Poetry",
+              explanation: "Dependency tools record what your app needs so another machine can install the same project.",
+              aiUseCase: "Rebuild the same AI API locally, in CI, or on a deployment server.",
+              plainExample: "A teammate should be able to clone the repo, install dependencies, and run the app.",
+              code: `python -m pip freeze > requirements.txt
+python -m pip install -r requirements.txt`
+            },
+            {
+              title: ".env files and secrets",
+              explanation: ".env files store local settings, but real secrets should not be committed to Git. Commit .env.example instead.",
+              aiUseCase: "Load OPENAI_API_KEY, DATABASE_URL, and MODEL_NAME without hardcoding them.",
+              plainExample: "The code reads the API key from the environment, while the repository only shows which variable names are required.",
+              code: `# .env.example
+OPENAI_API_KEY=
+MODEL_NAME=gpt-4.1-mini`
+            },
+            {
+              title: "Basic app structure",
+              explanation: "A simple folder structure keeps routes, services, models, tests, and configuration from becoming one giant file.",
+              aiUseCase: "Separate FastAPI routes from LLM client code and test files.",
+              plainExample: "Keep chat routing in one file, model-provider logic in another, and tests in a tests folder.",
+              code: `app/
+  main.py
+  config.py
+  services/
+  routes/
+tests/`
+            },
+            {
+              title: "Scripts, modules, and local servers",
+              explanation: "Python can run a single script, a package module, or a web server. Knowing the difference prevents path and import confusion.",
+              aiUseCase: "Run data cleanup scripts, eval modules, and FastAPI servers in predictable ways.",
+              plainExample: "Use python -m when running package modules so imports behave like they will in the real app.",
+              code: `python scripts/load_eval_data.py
+python -m app.jobs.run_eval
+uvicorn app.main:app --reload`
+            }
+          ],
+          commonMistakes: [
+            { mistake: "Installing everything globally", better: "Use a per-project virtual environment" },
+            { mistake: "Committing .env", better: "Commit .env.example and keep real secrets local or in a secret manager" },
+            { mistake: "One giant app.py file", better: "Split config, routes, services, and tests early" }
+          ],
+          checklist: ["Create and activate a virtual environment", "Install and record dependencies", "Use .env.example safely", "Create a simple app folder structure", "Run scripts, modules, and a local FastAPI server"]
+        }
+      },
+      {
+        n: "1.6",
         title: "Working with HTTP APIs",
         items: ["The requests library", "HTTP verbs, headers, status codes", "Authentication (Bearer tokens, API keys)", "Rate limits, retries, exponential backoff with tenacity"],
         detail: {
@@ -435,19 +523,19 @@ headers = {"Authorization": f"Bearer {api_key}"}`
         }
       },
       {
-        n: "1.6",
+        n: "1.7",
         title: "Database Connectivity",
-        items: ["psycopg2 for raw PostgreSQL", "SQLAlchemy ORM basics", "Connection pooling and why it matters under load", "Raw SQL when the ORM gets in the way"],
+        items: ["Enough PostgreSQL for agent state, evals, and production APIs", "Parameterized queries with psycopg2", "SQLAlchemy ORM basics", "Connection pooling under load", "Raw SQL when the ORM gets in the way"],
         detail: {
           duration: "60–90 min",
           level: "Beginner",
           status: "Required",
-          goal: "Connect Python code to a database and understand when to use raw SQL, an ORM, and connection pooling.",
-          whyIntro: "AI apps still need durable data: users, messages, documents, evals, and agent state. You will use this when you are:",
+          goal: "Learn enough database connectivity to support agent state, evals, document metadata, and production APIs without turning this into a database course.",
+          whyIntro: "AI apps still need durable data: users, messages, documents, evals, and agent state. This module gives you the practical minimum for when you are:",
           codeLabel: "SQL/Python example",
           showCodeLabel: "Show code",
           hideCodeLabel: "Hide code",
-          conceptsTitle: "Database Concepts",
+          conceptsTitle: "Practical Database Concepts",
           whyItMatters: ["Store users and chats", "Save agent state", "Query business data", "Track eval runs", "Support production APIs"],
           concepts: [
             {
@@ -495,7 +583,7 @@ headers = {"Authorization": f"Bearer {api_key}"}`
         }
       },
       {
-        n: "1.7",
+        n: "1.8",
         title: "FastAPI",
         items: ["First /chat endpoint", "Pydantic request/response models", "Dependency injection", "Automatic OpenAPI docs", "Running with uvicorn"],
         detail: {
@@ -558,21 +646,37 @@ class ChatRequest(BaseModel):
         }
       },
       {
-        n: "1.8",
+        n: "1.9",
         title: "Async Programming",
-        items: ["asyncio fundamentals — event loop, coroutines", "async/await syntax", "asyncio.gather for parallel LLM calls", "asyncio.wait_for for timeout protection", "asyncio.create_task for fire-and-forget logging"],
+        items: ["Blocking vs non-blocking work", "I/O-bound vs CPU-bound tasks", "asyncio fundamentals — event loop, coroutines", "async/await syntax", "async HTTP clients", "asyncio.gather and wait_for for parallel LLM calls with timeouts"],
         detail: {
           duration: "60–90 min",
           level: "Intermediate",
           status: "Required",
-          goal: "Use async Python to run slow network work without blocking the whole AI app.",
+          goal: "Use async Python for slow network work, understand when it helps, and avoid blocking an async AI app by accident.",
           whyIntro: "LLM calls, retrieval, and API requests are slow network work. Async Python helps keep apps responsive when you are:",
           codeLabel: "Python example",
           showCodeLabel: "Show Python code",
           hideCodeLabel: "Hide Python code",
           conceptsTitle: "Async Concepts",
-          whyItMatters: ["Call multiple LLMs", "Run retrieval in parallel", "Avoid blocking APIs", "Handle timeouts", "Log in the background"],
+          whyItMatters: ["Call multiple LLMs", "Run retrieval in parallel", "Avoid blocking APIs", "Handle timeouts", "Use async HTTP clients", "Log in the background"],
           concepts: [
+            {
+              title: "Blocking vs non-blocking work",
+              explanation: "Blocking work holds the current thread until it finishes. Non-blocking async work lets the event loop do other useful work while waiting on network I/O.",
+              aiUseCase: "Keep a FastAPI app responsive while waiting for LLM providers, retrievers, or tools.",
+              plainExample: "Waiting for a model response should not freeze every other request your server is handling.",
+              code: `# Avoid blocking calls inside async routes.
+# Prefer an async client for network I/O.`
+            },
+            {
+              title: "I/O-bound vs CPU-bound tasks",
+              explanation: "Async helps most with I/O-bound work such as HTTP requests. It does not magically speed up CPU-heavy parsing, embedding math, or image processing.",
+              aiUseCase: "Use async for provider calls and retrieval requests; use workers or processes for heavy document processing.",
+              plainExample: "Downloading three URLs is async-friendly. Parsing a huge PDF may need a worker.",
+              code: `# I/O-bound: model API calls, HTTP requests, DB waits
+# CPU-bound: heavy parsing, image processing, local ML inference`
+            },
             {
               title: "Event loop and coroutines",
               explanation: "The event loop schedules async work. Coroutines are async functions waiting to run.",
@@ -591,8 +695,18 @@ class ChatRequest(BaseModel):
     return result`
             },
             {
+              title: "Async HTTP clients",
+              explanation: "Inside async code, use async HTTP clients instead of blocking libraries such as requests.",
+              aiUseCase: "Call model providers or internal tools without blocking the event loop.",
+              plainExample: "If your route is async but it uses requests.post(), the event loop still gets blocked.",
+              code: `import httpx
+
+async with httpx.AsyncClient(timeout=10) as client:
+    response = await client.post(url, json=payload)`
+            },
+            {
               title: "Running work in parallel",
-              explanation: "asyncio.gather runs multiple async tasks and waits for all of them.",
+              explanation: "asyncio.gather runs multiple independent async tasks and waits for all of them.",
               aiUseCase: "Call retrieval, moderation, and model routing checks at the same time.",
               plainExample: "Three independent checks can finish in one second instead of three.",
               code: `results = await asyncio.gather(
@@ -614,14 +728,15 @@ class ChatRequest(BaseModel):
           ],
           commonMistakes: [
             { mistake: "Mixing blocking calls inside async code", better: "Use async libraries for network work" },
+            { mistake: "Using async for CPU-heavy work", better: "Use workers, processes, or background jobs for CPU-bound tasks" },
             { mistake: "No timeout", better: "Set a timeout around external calls" },
             { mistake: "Parallelizing dependent steps", better: "Only gather independent work" }
           ],
-          checklist: ["Explain event loop and coroutines", "Use async/await", "Use gather", "Add a timeout", "Use background tasks carefully"]
+          checklist: ["Explain blocking vs non-blocking", "Separate I/O-bound from CPU-bound work", "Use async/await", "Use an async HTTP client", "Use gather", "Add a timeout", "Use background tasks carefully"]
         }
       },
       {
-        n: "1.9",
+        n: "1.10",
         title: "Git + GitHub Workflows",
         items: ["Git basics: clone, branch, commit, merge, rebase", "Pull requests, code review, issues, and project boards", "Resolving merge conflicts without panic", "README-driven portfolio repos — architecture, setup, screenshots, eval numbers"],
         detail: {
@@ -691,7 +806,7 @@ git status`
         }
       },
       {
-        n: "1.10",
+        n: "1.11",
         title: "Linux + Shell Basics",
         items: ["Navigation, permissions, processes, environment variables", "grep/rg, find, awk/sed basics for logs and data files", "SSH into a server, tail logs, inspect disk/memory/ports", "Shell scripts for repeatable local workflows"],
         detail: {
@@ -769,8 +884,8 @@ uvicorn app:app --reload`
         }
       },
       {
-        n: "1.11",
-        title: "Testing Fundamentals",
+        n: "1.12",
+        title: "Testing Python Services",
         items: ["pytest unit tests for pure Python functions", "FastAPI integration tests with test clients", "Mocking LLM/API calls without hiding failures", "Golden-file and regression tests for prompts, retrieval, and eval outputs"],
         detail: {
           duration: "60–90 min",
